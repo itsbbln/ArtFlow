@@ -29,6 +29,9 @@ class _ArtworkCardState extends State<ArtworkCard> {
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      elevation: 0.5,
+      shadowColor: Colors.black.withValues(alpha: 0.1),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: widget.onTap,
@@ -47,6 +50,20 @@ class _ArtworkCardState extends State<ArtworkCard> {
                       child: Image.network(
                         image,
                         fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) {
+                            return child;
+                          }
+                          return Container(
+                            color: const Color(0xFFF6F2EA),
+                            alignment: Alignment.center,
+                            child: const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          );
+                        },
                         errorBuilder: (context, error, stackTrace) {
                           return Container(
                             color: const Color(0xFFF1E5CE),
@@ -130,16 +147,20 @@ class _ArtworkCardState extends State<ArtworkCard> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      Text(
-                        currency.format(widget.artwork.price),
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
+                      Expanded(
+                        child: Text(
+                          currency.format(widget.artwork.price),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
-                      const Spacer(),
                       if (widget.artwork.avgRating > 0) ...[
+                        const SizedBox(width: 8),
                         const Icon(
                           Icons.star,
                           size: 13,

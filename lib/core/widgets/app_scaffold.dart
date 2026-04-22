@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../features/auth/presentation/auth_state.dart';
+import '../../features/shared/data/mock_seeder.dart';
 
 class AppScaffold extends StatelessWidget {
   const AppScaffold({super.key, required this.location, required this.child});
@@ -38,9 +39,146 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
-    final initial = auth.isAuthenticated ? 'A' : 'U';
 
     return Scaffold(
+      endDrawer: Drawer(
+        child: Container(
+          color: const Color(0xFFF7F2EA),
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 20,
+                        backgroundColor: Colors.white24,
+                        child: Icon(Icons.person_outline, color: Colors.white),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            auth.displayName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            auth.isAdmin
+                                ? 'Admin'
+                                : auth.isArtist
+                                ? 'Artist'
+                                : 'Buyer',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _MenuTile(
+                  icon: Icons.person_outline,
+                  title: 'Profile',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    context.go('/profile');
+                  },
+                ),
+                _MenuTile(
+                  icon: Icons.shopping_bag_outlined,
+                  title: 'Orders',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    context.go('/orders');
+                  },
+                ),
+                _MenuTile(
+                  icon: Icons.request_page_outlined,
+                  title: 'Commissions',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    context.go('/commissions');
+                  },
+                ),
+                _MenuTile(
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: 'Payments',
+                  subtitle: 'Coming soon',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Payments: coming soon.')),
+                    );
+                  },
+                ),
+                _MenuTile(
+                  icon: Icons.notifications_none,
+                  title: 'Notifications',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    context.go('/notifications');
+                  },
+                ),
+                if (auth.isAdmin)
+                  _MenuTile(
+                    icon: Icons.admin_panel_settings_outlined,
+                    title: 'Admin',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.go('/admin');
+                    },
+                  ),
+                if (auth.isArtist)
+                  _MenuTile(
+                    icon: Icons.verified_outlined,
+                    title: auth.isVerifiedArtist
+                        ? 'Verified Artist'
+                        : 'Get Verified Badge',
+                    subtitle: auth.isVerifiedArtist ? null : 'PHP 150 one-time',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      if (!auth.isVerifiedArtist) {
+                        auth.setVerifiedArtist(true);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Verified badge enabled (mock).'),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                const SizedBox(height: 10),
+                const Divider(height: 1),
+                const SizedBox(height: 10),
+                _MenuTile(
+                  icon: Icons.logout,
+                  title: 'Log out',
+                  danger: true,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    auth.setUnauthenticated();
+                    context.go('/register');
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
       body: Column(
         children: [
           SafeArea(
@@ -63,23 +201,22 @@ class AppScaffold extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                     child: Row(
                       children: [
-                        Container(
-                          width: 30,
-                          height: 30,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(
-                            Icons.palette_outlined,
-                            size: 18,
-                            color: Colors.white,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: Image.asset(
+                              'assets/images/artflow_logo.png',
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Text(
                           'ArtFlow',
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ],
                     ),
@@ -95,49 +232,38 @@ class AppScaffold extends StatelessWidget {
                         onPressed: () => context.push('/notifications'),
                         icon: const Icon(Icons.notifications_none, size: 20),
                       ),
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          width: 16,
-                          height: 16,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(99),
-                          ),
-                          child: const Center(
-                            child: Text(
-                              '3',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w700,
+                      if (MockSeeder.unreadNotificationCount > 0)
+                        Positioned(
+                          right: 8,
+                          top: 8,
+                          child: Container(
+                            width: 16,
+                            height: 16,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '${MockSeeder.unreadNotificationCount}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
                     ],
                   ),
-                  InkWell(
-                    onTap: () => context.push('/profile'),
-                    borderRadius: BorderRadius.circular(99),
-                    child: Container(
-                      width: 30,
-                      height: 30,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF1E5CE),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: Text(
-                        initial,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
+                  Builder(
+                    builder: (context) {
+                      return IconButton(
+                        onPressed: () => Scaffold.of(context).openEndDrawer(),
+                        icon: const Icon(Icons.menu_rounded, size: 22),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -172,7 +298,7 @@ class AppScaffold extends StatelessWidget {
                     ),
                     _BottomItem(
                       icon: Icons.add_box_outlined,
-                      label: 'Create',
+                      label: 'Upload',
                       active: _selectedIndex() == 2,
                       onTap: () => context.go(_tabs[2]),
                     ),
@@ -194,6 +320,49 @@ class AppScaffold extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MenuTile extends StatelessWidget {
+  const _MenuTile({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+    this.danger = false,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+  final bool danger;
+
+  @override
+  Widget build(BuildContext context) {
+    final dangerColor = const Color(0xFFB71B1B);
+    final titleColor = danger ? dangerColor : const Color(0xFF2D2A26);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        child: ListTile(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          leading: Icon(icon, color: titleColor),
+          title: Text(
+            title,
+            style: TextStyle(fontWeight: FontWeight.w600, color: titleColor),
+          ),
+          subtitle: subtitle == null
+              ? null
+              : Text(subtitle!, style: const TextStyle(fontSize: 12)),
+          trailing: const Icon(Icons.chevron_right_rounded),
+          onTap: onTap,
+        ),
       ),
     );
   }

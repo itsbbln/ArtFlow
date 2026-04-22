@@ -32,6 +32,15 @@ GoRouter createRouter(AuthState authState) {
         return '/';
       }
 
+      if (path == '/admin' && !authState.isAdmin) {
+        return '/';
+      }
+
+      if ((path == '/create' || path.startsWith('/create/')) &&
+          !authState.isArtist) {
+        return '/';
+      }
+
       return null;
     },
     routes: [
@@ -65,6 +74,12 @@ GoRouter createRouter(AuthState authState) {
           GoRoute(
             path: '/create',
             builder: (_, _) => const CreateArtworkScreen(),
+          ),
+          GoRoute(
+            path: '/create/:id',
+            builder: (_, state) {
+              return CreateArtworkScreen(artworkId: state.pathParameters['id']);
+            },
           ),
           GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
           GoRoute(

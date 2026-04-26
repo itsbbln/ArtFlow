@@ -5,6 +5,7 @@ import '../../features/auth/presentation/auth_state.dart';
 import '../widgets/app_scaffold.dart';
 import '../../features/screens/screens.dart';
 import '../../features/screens/welcome_screen.dart';
+import '../../features/screens/become_artist_screen.dart';
 
 GoRouter createRouter(AuthState authState) {
   return GoRouter(
@@ -92,6 +93,10 @@ GoRouter createRouter(AuthState authState) {
           GoRoute(
             path: '/edit-profile',
             builder: (_, _) => const EditProfileScreen(),
+          ),
+          GoRoute(
+            path: '/become-artist',
+            builder: (_, _) => const BecomeArtistScreen(),
           ),
           GoRoute(path: '/messages', builder: (_, _) => const MessagesScreen()),
           GoRoute(

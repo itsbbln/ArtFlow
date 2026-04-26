@@ -13,82 +13,82 @@ import '../shared/data/mock_seeder.dart';
 import '../shared/widgets/artwork_card.dart';
 import 'widgets/admin_summary_panel.dart';
 
-class SplashScreen extends StatelessWidget {
+// ============================================================================
+// SPLASH SCREEN - Logo Animation Only
+// ============================================================================
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeOutBack),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+
+    _animationController.forward();
+
+    // Navigate after animation completes
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (mounted) {
+        context.go('/welcome');
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFF8F1414), Color(0xFFB71B1B), Color(0xFFDAAF1F)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final logoSize = constraints.maxHeight < 700 ? 140.0 : 180.0;
-            final titleSize = constraints.maxHeight < 700 ? 30.0 : 34.0;
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: Image.asset(
-                          'assets/images/artflow_logo.png',
-                          width: logoSize,
-                          height: logoSize,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      Text(
-                        'ArtFlow',
-                        style: TextStyle(
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Commission, discover, and collect art in one mobile experience.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 16,
-                          height: 1.35,
-                        ),
-                      ),
-                      const SizedBox(height: 26),
-                      FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF8F1414),
-                        ),
-                        onPressed: () => context.go('/register'),
-                        icon: const Icon(Icons.arrow_forward),
-                        label: const Text('Get Started'),
-                      ),
-                    ],
-                  ),
-                ),
+      color: const Color(0xFF8F1414),
+      child: Center(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: ScaleTransition(
+            scale: _scaleAnimation,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: Image.asset(
+                'assets/images/artflow_logo.png',
+                width: 200,
+                height: 200,
+                fit: BoxFit.cover,
               ),
-            );
-          },
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
+// ============================================================================
+// REGISTER/LOGIN SCREEN - Unified Authentication UI
+// ============================================================================
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -97,153 +97,414 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final _nameController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _role = 'buyer';
+  final _confirmPasswordController = TextEditingController();
+  
   bool _isLogin = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _agreeToTerms = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check if mode is passed in query params
+    final uri = Uri.base;
+    if (uri.queryParameters['mode'] == 'login') {
+      _isLogin = true;
+    }
+  }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  bool _validateInputs() {
+    if (_emailController.text.trim().isEmpty) {
+      _showError('Please enter your email address');
+      return false;
+    }
+    if (!_isValidEmail(_emailController.text.trim())) {
+      _showError('Please enter a valid email address');
+      return false;
+    }
+    if (_passwordController.text.length < 6) {
+      _showError('Password must be at least 6 characters');
+      return false;
+    }
+    
+    if (!_isLogin) {
+      if (_fullNameController.text.trim().isEmpty) {
+        _showError('Please enter your full name');
+        return false;
+      }
+      if (_passwordController.text != _confirmPasswordController.text) {
+        _showError('Passwords do not match');
+        return false;
+      }
+      if (!_agreeToTerms) {
+        _showError('Please agree to the Terms of Service');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegex.hasMatch(email);
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
+  }
+
+  void _handleSubmit() {
+    if (!_validateInputs()) return;
+
+    final auth = context.read<AuthState>();
+    
+    if (_isLogin) {
+      // Simulate login
+      auth.setAuthenticated(role: UserRole.buyer);
+      context.go('/');
+    } else {
+      // Register new account
+      auth.register(
+        name: _fullNameController.text.trim(),
+        role: 'buyer',
+        email: _emailController.text.trim(),
+      );
+      // Navigate to buyer onboarding (artist can apply later)
+      context.go('/onboarding/buyer');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Text(
-              _isLogin ? 'Welcome back' : 'Create account',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              _isLogin
-                  ? 'Log in to continue using ArtFlow.'
-                  : 'Join ArtFlow as a buyer or artist.',
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Sign up'),
-                    selected: !_isLogin,
-                    onSelected: (_) => setState(() => _isLogin = false),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ChoiceChip(
-                    label: const Text('Login'),
-                    selected: _isLogin,
-                    onSelected: (_) => setState(() => _isLogin = true),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(
-                  value: 'buyer',
-                  icon: Icon(Icons.shopping_bag_outlined),
-                  label: Text('Buyer'),
-                ),
-                ButtonSegment(
-                  value: 'artist',
-                  icon: Icon(Icons.brush_outlined),
-                  label: Text('Artist'),
-                ),
-              ],
-              selected: {_role},
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _role = selection.first;
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            if (!_isLogin) ...[
-              TextField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Full name',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/get-started'),
+        ),
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              const Color(0xFFFAEBDC).withOpacity(0.6),
             ],
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            children: [
+              const SizedBox(height: 20),
+
+              // ============ HEADER ============
+              Center(
+                child: Column(
+                  children: [
+                    Text(
+                      _isLogin ? 'Welcome back' : 'Create your account',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _isLogin
+                          ? 'Log in to discover and collect amazing art'
+                          : 'Join ArtFlow to discover and collect amazing art',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Colors.black54,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 40),
+
+              // ============ FORM FIELDS ============
+              if (!_isLogin) ...[
+                // Full Name
+                _FormField(
+                  label: 'Full Name',
+                  hint: 'Enter your name',
+                  controller: _fullNameController,
+                  icon: Icons.person_outline,
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Email Address
+              _FormField(
+                label: 'Email Address',
+                hint: 'Enter your email',
+                controller: _emailController,
+                icon: Icons.email_outlined,
+                keyboardType: TextInputType.emailAddress,
               ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () {
-                if ((!_isLogin && _nameController.text.trim().isEmpty) ||
-                    _emailController.text.trim().isEmpty ||
-                    _passwordController.text.length < 6) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Please complete all fields. Password must be at least 6 characters.',
+              const SizedBox(height: 20),
+
+              // Password
+              _FormField(
+                label: 'Password',
+                hint: 'Enter your password',
+                controller: _passwordController,
+                icon: Icons.lock_outline,
+                isPassword: true,
+                obscureText: _obscurePassword,
+                onTogglePassword: () {
+                  setState(() => _obscurePassword = !_obscurePassword);
+                },
+              ),
+              const SizedBox(height: 20),
+
+              if (!_isLogin) ...[
+                // Confirm Password
+                _FormField(
+                  label: 'Confirm Password',
+                  hint: 'Re-enter your password',
+                  controller: _confirmPasswordController,
+                  icon: Icons.lock_outline,
+                  isPassword: true,
+                  obscureText: _obscureConfirmPassword,
+                  onTogglePassword: () {
+                    setState(
+                      () => _obscureConfirmPassword = !_obscureConfirmPassword,
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+
+                // Terms & Conditions
+                CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _agreeToTerms,
+                  onChanged: (val) {
+                    setState(() => _agreeToTerms = val ?? false);
+                  },
+                  title: RichText(
+                    text: TextSpan(
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.black54,
+                          ),
+                      children: [
+                        const TextSpan(text: 'I agree to the '),
+                        TextSpan(
+                          text: 'Terms of Service',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ] else
+                const SizedBox(height: 8),
+
+              // ============ CTA BUTTONS ============
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: _handleSubmit,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    _isLogin ? 'Sign In' : 'Create Account',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Skip for now
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton(
+                  onPressed: () {
+                    context.read<AuthState>().setAuthenticated(
+                      role: UserRole.buyer,
+                    );
+                    context.go('/');
+                  },
+                  child: Text(
+                    'Skip for now',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Colors.black54,
+                        ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ============ TOGGLE LOGIN/REGISTER ============
+              Center(
+                child: Wrap(
+                  spacing: 4,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    Text(
+                      _isLogin
+                          ? "Don't have an account? "
+                          : 'Already have an account? ',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: Colors.black54,
+                          ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() => _isLogin = !_isLogin);
+                        _fullNameController.clear();
+                        _emailController.clear();
+                        _passwordController.clear();
+                        _confirmPasswordController.clear();
+                      },
+                      child: Text(
+                        _isLogin ? 'Create account' : 'Sign in',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                     ),
-                  );
-                  return;
-                }
-                final auth = context.read<AuthState>();
-                auth.register(
-                  name: _isLogin ? 'ArtFlow User' : _nameController.text,
-                  role: _role,
-                  email: _emailController.text,
-                );
-                if (_isLogin) {
-                  context.go('/');
-                } else {
-                  context.go(
-                    _role == 'artist'
-                        ? '/onboarding/artist'
-                        : '/onboarding/buyer',
-                  );
-                }
-              },
-              child: Text(_isLogin ? 'Login' : 'Create account'),
-            ),
-            const SizedBox(height: 10),
-            TextButton(
-              onPressed: () {
-                context.read<AuthState>().setAuthenticated(role: UserRole.buyer);
-                context.go('/');
-              },
-              child: const Text('Skip for now'),
-            ),
-          ],
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
+class _FormField extends StatelessWidget {
+  final String label;
+  final String hint;
+  final TextEditingController controller;
+  final IconData icon;
+  final bool isPassword;
+  final bool obscureText;
+  final VoidCallback? onTogglePassword;
+  final TextInputType keyboardType;
+
+  const _FormField({
+    required this.label,
+    required this.hint,
+    required this.controller,
+    required this.icon,
+    this.isPassword = false,
+    this.obscureText = false,
+    this.onTogglePassword,
+    this.keyboardType = TextInputType.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          keyboardType: keyboardType,
+          obscureText: isPassword && obscureText,
+          decoration: InputDecoration(
+            hintText: hint,
+            hintStyle: TextStyle(
+              color: Colors.black26,
+              fontWeight: FontWeight.w400,
+            ),
+            prefixIcon: Icon(icon),
+            suffixIcon: isPassword
+                ? IconButton(
+                    icon: Icon(
+                      obscureText ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.black54,
+                    ),
+                    onPressed: onTogglePassword,
+                  )
+                : null,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 14,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFE4D8CB),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(
+                color: Color(0xFFE4D8CB),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// BUYER ONBOARDING SCREEN - Personalized Experience Setup
+// ============================================================================
 class BuyerOnboardingScreen extends StatefulWidget {
   const BuyerOnboardingScreen({super.key});
 
@@ -260,34 +521,74 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
     'Abstract',
     'Minimalist',
     'Fantasy',
+    'Sculpture',
+    'Photography',
+    'Installation',
+    'Mixed Media',
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              const Color(0xFFFAEBDC).withOpacity(0.6),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             children: [
+              const SizedBox(height: 20),
+              
+              // Header
               Text(
-                'Buyer onboarding',
-                style: Theme.of(context).textTheme.headlineMedium,
+                "What's your style?",
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Pick your interests so we can personalize your feed.',
+              const SizedBox(height: 12),
+              Text(
+                "Select your art interests so we can personalize your feed with artworks you'll love.",
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.black54,
+                      height: 1.5,
+                    ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 28),
+
+              // Interest Chips
               Wrap(
-                spacing: 8,
-                runSpacing: 8,
+                spacing: 10,
+                runSpacing: 10,
                 children: _interests.map((item) {
                   final selected = _selected.contains(item);
                   return FilterChip(
                     selected: selected,
                     label: Text(item),
+                    backgroundColor: Colors.white,
+                    selectedColor: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withOpacity(0.2),
+                    side: BorderSide(
+                      color: selected
+                          ? Theme.of(context).colorScheme.primary
+                          : const Color(0xFFE4D8CB),
+                      width: selected ? 1.5 : 1,
+                    ),
                     onSelected: (value) {
                       setState(() {
                         if (value) {
@@ -300,9 +601,25 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
                   );
                 }).toList(),
               ),
-              const Spacer(),
+
+              const SizedBox(height: 40),
+
+              // Progress indicator
+              Center(
+                child: Text(
+                  '${_selected.length} interests selected',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Colors.black54,
+                      ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // CTA Buttons
               SizedBox(
                 width: double.infinity,
+                height: 52,
                 child: FilledButton(
                   onPressed: () {
                     context.read<AuthState>().completeBuyerOnboarding(
@@ -310,7 +627,33 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
                     );
                     context.go('/');
                   },
-                  child: const Text('Finish setup'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Continue to Explore',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton(
+                  onPressed: () => context.go('/'),
+                  child: Text(
+                    'Skip this step',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Colors.black54,
+                        ),
+                  ),
                 ),
               ),
             ],
@@ -321,6 +664,9 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
   }
 }
 
+// ============================================================================
+// ARTIST ONBOARDING SCREEN - Creator Profile Setup
+// ============================================================================
 class ArtistOnboardingScreen extends StatefulWidget {
   const ArtistOnboardingScreen({super.key});
 
@@ -331,6 +677,7 @@ class ArtistOnboardingScreen extends StatefulWidget {
 class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
   final _styleController = TextEditingController();
   final _bioController = TextEditingController();
+  int _currentStep = 0;
 
   @override
   void dispose() {
@@ -339,50 +686,209 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
     super.dispose();
   }
 
+  bool _isComplete() {
+    return _styleController.text.trim().isNotEmpty &&
+        _bioController.text.trim().isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            Text(
-              'Artist onboarding',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Set up your creator profile and commission preferences.',
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _styleController,
-              decoration: const InputDecoration(
-                labelText: 'Primary art style',
-                border: OutlineInputBorder(),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              const Color(0xFFFAEBDC).withOpacity(0.6),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            children: [
+              const SizedBox(height: 20),
+
+              // Header
+              Text(
+                'Create your artist profile',
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _bioController,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Artist bio',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 12),
+              Text(
+                'Let collectors know about your creative journey and artistic style.',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Colors.black54,
+                      height: 1.5,
+                    ),
               ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton(
-              onPressed: () {
-                context.read<AuthState>().completeArtistOnboarding(
-                  style: _styleController.text,
-                  bio: _bioController.text,
-                );
-                context.go('/artist-dashboard');
-              },
-              child: const Text('Launch dashboard'),
-            ),
-          ],
+              const SizedBox(height: 32),
+
+              // Primary Art Style
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Primary Art Style *',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _styleController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'e.g. Abstract, Digital, Oil Painting',
+                      hintStyle: TextStyle(
+                        color: Colors.black26,
+                      ),
+                      prefixIcon: const Icon(Icons.palette_outlined),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFE4D8CB),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFE4D8CB),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Artist Bio
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'About Your Art *',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _bioController,
+                    maxLines: 4,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText:
+                          'Tell collectors about your creative journey, inspiration, and what makes your work unique...',
+                      hintStyle: TextStyle(
+                        color: Colors.black26,
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFE4D8CB),
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: Color(0xFFE4D8CB),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${_bioController.text.length}/500 characters',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.black54,
+                        ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 40),
+
+              // CTA Buttons
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: _isComplete()
+                      ? () {
+                          context.read<AuthState>().completeArtistOnboarding(
+                            style: _styleController.text.trim(),
+                            bio: _bioController.text.trim(),
+                          );
+                          context.go('/artist-dashboard');
+                        }
+                      : null,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: Text(
+                    'Launch Dashboard',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: TextButton(
+                  onPressed: () => context.go('/'),
+                  child: Text(
+                    'Skip for now',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Colors.black54,
+                        ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -407,7 +913,7 @@ class HomeScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
       children: [
         Text(
-          'Maayong adlaw, ${auth.displayName.split(' ').first}',
+          "Maayong adlaw, ${auth.displayName.split(' ').first}",
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Colors.black54,
                 fontWeight: FontWeight.w600,
@@ -1186,7 +1692,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         if (_showFilters) ...[
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            initialValue: _sortBy,
+            value: _sortBy,
             items: const [
               DropdownMenuItem(value: 'newest', child: Text('Newest First')),
               DropdownMenuItem(
@@ -2714,7 +3220,7 @@ class _CommissionRequestScreenState extends State<CommissionRequestScreen> {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
-          initialValue: _timeline,
+          value: _timeline,
           items: const [
             DropdownMenuItem(value: '1 week', child: Text('1 week')),
             DropdownMenuItem(value: '2 weeks', child: Text('2 weeks')),

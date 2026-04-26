@@ -4,6 +4,6 @@ import '../domain/auth_status.dart';
 
 class AuthService {
   Future<AuthStatus> checkSession() async {
-    return AuthStatus.authenticated;
+    return AuthStatus.unauthenticated;
   }
 }

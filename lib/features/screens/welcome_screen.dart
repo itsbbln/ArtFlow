@@ -170,20 +170,25 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             )
                           : const SizedBox(width: 80),
                       // Next or Get Started Button
-                      _currentIndex < slides.length - 1
+                      _currentIndex == 0
                           ? FilledButton(
                               onPressed: () => _goToSlide(_currentIndex + 1),
-                              child: const Text('Next'),
+                              child: const Text('-> Get Started'),
                             )
-                          : FilledButton(
-                              onPressed: () async {
-                                await context.read<AuthState>().completeWelcome();
-                                if (mounted) {
-                                  context.go('/register');
-                                }
-                              },
-                              child: const Text('Get Started'),
-                            ),
+                          : _currentIndex < slides.length - 1
+                              ? FilledButton(
+                                  onPressed: () => _goToSlide(_currentIndex + 1),
+                                  child: const Text('Next'),
+                                )
+                              : FilledButton(
+                                  onPressed: () async {
+                                    await context.read<AuthState>().completeWelcome();
+                                    if (mounted) {
+                                      context.go('/register');
+                                    }
+                                  },
+                                  child: const Text('Login / Register'),
+                                ),
                     ],
                   ),
                 ),

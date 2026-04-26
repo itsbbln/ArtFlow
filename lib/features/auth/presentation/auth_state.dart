@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/auth_service.dart';
 import '../domain/auth_status.dart';
@@ -20,6 +21,7 @@ class AuthState extends ChangeNotifier {
   bool _verifiedArtist = false;
   bool _portfolioPack = false;
   bool _featuredBoost = false;
+  bool _welcomeCompleted = false;
 
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   UserRole get role => _role;
@@ -30,6 +32,7 @@ class AuthState extends ChangeNotifier {
   bool get isVerifiedArtist => _verifiedArtist;
   bool get hasPortfolioPack => _portfolioPack;
   bool get hasFeaturedBoost => _featuredBoost;
+  bool get welcomeCompleted => _welcomeCompleted;
   bool get isAdmin => _role == UserRole.admin;
   bool get isArtist => _role == UserRole.artist || _role == UserRole.admin;
   bool get isBuyer => _role == UserRole.buyer;
@@ -38,6 +41,9 @@ class AuthState extends ChangeNotifier {
     _status = AuthStatus.checking;
     notifyListeners();
     _status = await _service.checkSession();
+    // Load welcome completion status
+    final prefs = await SharedPreferences.getInstance();
+    _welcomeCompleted = prefs.getBool('welcome_completed') ?? false;
     notifyListeners();
   }
 
@@ -109,6 +115,13 @@ class AuthState extends ChangeNotifier {
 
   void enableFeaturedBoost() {
     _featuredBoost = true;
+    notifyListeners();
+  }
+
+  Future<void> completeWelcome() async {
+    _welcomeCompleted = true;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('welcome_completed', true);
     notifyListeners();
   }
 }

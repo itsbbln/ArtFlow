@@ -62,7 +62,7 @@ class SplashScreen extends StatelessWidget {
                         'Commission, discover, and collect art in one mobile experience.',
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: Colors.white.withOpacity(0.9),
                           fontSize: 16,
                           height: 1.35,
                         ),
@@ -395,9 +395,13 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
+
     final artworks = MockSeeder.artworks;
     final featured = artworks.where((item) => item.isFeatured).toList();
     final categories = MockSeeder.categories;
+
+    final firstFeatured =
+        featured.isNotEmpty ? featured.first : null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
@@ -405,39 +409,52 @@ class HomeScreen extends StatelessWidget {
         Text(
           'Maayong adlaw, ${auth.displayName.split(' ').first}',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.black54,
-            fontWeight: FontWeight.w600,
-          ),
+                color: Colors.black54,
+                fontWeight: FontWeight.w600,
+              ),
         ),
+
         const SizedBox(height: 4),
-        Text(
-          'Discover Local',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
+
+        Text('Discover Local',
+            style: Theme.of(context).textTheme.headlineMedium),
         Text(
           'Bukidnon Art',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: Theme.of(context).colorScheme.primary,
-          ),
+                color: Theme.of(context).colorScheme.primary,
+              ),
         ),
+
         const SizedBox(height: 14),
-        if (featured.isNotEmpty)
+
+        const PartnerCarousel(),
+        const SizedBox(height: 20),
+        const FeaturedArtistSection(),
+        const SizedBox(height: 18),
+
+        // ================= FEATURED =================
+        if (firstFeatured != null)
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: Theme.of(
-                  context,
-                ).colorScheme.primary.withValues(alpha: 0.16),
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withOpacity(0.16),
               ),
               gradient: LinearGradient(
                 colors: [
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-                  const Color(0xFFF1E5CE).withValues(alpha: 0.6),
-                  Theme.of(
-                    context,
-                  ).colorScheme.secondary.withValues(alpha: 0.08),
+                  Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withOpacity(0.08),
+                  const Color(0xFFF1E5CE).withOpacity(0.6),
+                  Theme.of(context)
+                      .colorScheme
+                      .secondary
+                      .withOpacity(0.08),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -450,28 +467,31 @@ class HomeScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Featured Artist',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
+                        'Featured Artwork',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                              fontWeight: FontWeight.w700,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        featured.first.artistName,
+                        firstFeatured.artistName,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        featured.first.title,
-                        style: Theme.of(context).textTheme.bodySmall,
+                        firstFeatured.title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                       const SizedBox(height: 8),
                       FilledButton.tonal(
-                        onPressed: () =>
-                            context.push('/artwork/${featured.first.id}'),
+                        onPressed: () => context
+                            .push('/artwork/${firstFeatured.id}'),
                         child: const Text('View Artwork'),
                       ),
                     ],
@@ -481,28 +501,29 @@ class HomeScreen extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
-                    featured.first.imageUrl ?? MockSeeder.placeholder,
+                    firstFeatured.imageUrl ?? MockSeeder.placeholder,
                     width: 94,
                     height: 94,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 94,
-                        height: 94,
-                        color: const Color(0xFFF1E5CE),
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.image_outlined),
-                      );
-                    },
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 94,
+                      height: 94,
+                      color: const Color(0xFFF1E5CE),
+                      child: const Icon(Icons.image_outlined),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+
         const SizedBox(height: 16),
+
+        // ================= CATEGORIES =================
         Row(
           children: [
-            Text('Categories', style: Theme.of(context).textTheme.titleLarge),
+            Text('Categories',
+                style: Theme.of(context).textTheme.titleLarge),
             const Spacer(),
             TextButton(
               onPressed: () => context.push('/explore'),
@@ -510,19 +531,25 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
+
         SizedBox(
           height: 34,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: categories.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
-              final label = categories[index].replaceAll('_', ' ');
+              final label =
+                  categories[index].replaceAll('_', ' ');
+
+              final isSelected = index == 0;
+
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: index == 0
+                  color: isSelected
                       ? Theme.of(context).colorScheme.primary
                       : Colors.white,
                   borderRadius: BorderRadius.circular(999),
@@ -533,14 +560,18 @@ class HomeScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: index == 0 ? Colors.white : Colors.black87,
+                    color:
+                        isSelected ? Colors.white : Colors.black87,
                   ),
                 ),
               );
             },
           ),
         ),
+
         const SizedBox(height: 16),
+
+        // ================= TRENDING =================
         Row(
           children: [
             Icon(
@@ -549,29 +580,423 @@ class HomeScreen extends StatelessWidget {
               color: Theme.of(context).colorScheme.secondary,
             ),
             const SizedBox(width: 6),
-            Text('Trending Now', style: Theme.of(context).textTheme.titleLarge),
+            Text('Trending Now',
+                style: Theme.of(context).textTheme.titleLarge),
+          ],
+        ),
+
+        const SizedBox(height: 10),
+
+        if (artworks.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: Text("No artworks yet")),
+          )
+        else
+          GridView.builder(
+            itemCount: artworks.length,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate:
+                const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              mainAxisSpacing: 10,
+              crossAxisSpacing: 10,
+              mainAxisExtent: 252,
+            ),
+            itemBuilder: (context, index) {
+              final item = artworks[index];
+              return ArtworkCard(
+                artwork: item,
+                onTap: () =>
+                    context.push('/artwork/${item.id}'),
+              );
+            },
+          ),
+      ],
+    );
+  }
+}
+
+class _PartnerSlide {
+  const _PartnerSlide({
+    required this.label,
+    required this.description,
+    required this.color,
+    required this.assetPath,
+  });
+
+  final String label;
+  final String description;
+  final Color color;
+  final String assetPath;
+}
+
+class PartnerCarousel extends StatefulWidget {
+  const PartnerCarousel({super.key});
+
+  @override
+  State<PartnerCarousel> createState() => _PartnerCarouselState();
+}
+
+class _PartnerCarouselState extends State<PartnerCarousel> {
+  final PageController _controller = PageController(viewportFraction: 0.88);
+  int _currentIndex = 0;
+
+  static const slides = <_PartnerSlide>[
+    _PartnerSlide(
+      label: 'Partnered Orgs',
+      description:
+          'Partnering with local organizations to support Bukidnon artists and craftspeople.',
+      color: Color(0xFF7B3F00),
+      assetPath: 'assets/images/artizan_logo.png',
+    ),
+    _PartnerSlide(
+      label: 'Bukidnon Artists',
+      description:
+          'Highlighting Bukidnon makers and artists through curated collaborations.',
+      color: Color(0xFF1E4F3F),
+      assetPath: 'assets/images/bukidnon_artists_logo.png',
+    ),
+    _PartnerSlide(
+      label: 'Artizan Community',
+      description:
+          'Growing artisan networks with trusted local partnership programs.',
+      color: Color(0xFF5C2B8A),
+      assetPath: 'assets/images/artizan_logo.png',
+    ),
+  ];
+
+  void _onPageChanged(int index) {
+    setState(() => _currentIndex = index);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Partner highlights',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 12),
+
+        SizedBox(
+          height: 230,
+          child: PageView.builder(
+            controller: _controller,
+            itemCount: slides.length,
+            onPageChanged: _onPageChanged,
+            itemBuilder: (context, index) {
+              final slide = slides[index];
+
+              return AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  double scale = 1.0;
+
+                  if (_controller.position.haveDimensions) {
+                    scale = (_controller.page! - index).abs();
+                    scale = (1 - (scale * 0.15)).clamp(0.9, 1.0);
+                  }
+
+                  return Transform.scale(
+                    scale: scale,
+                    child: child,
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    gradient: LinearGradient(
+                      colors: [
+                        slide.color,
+                        slide.color.withOpacity(0.85),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // logo bubble
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.18),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        alignment: Alignment.center,
+                        child: Image.asset(
+                          slide.assetPath,
+                          width: 36,
+                          height: 36,
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      Text(
+                        slide.label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Text(
+                        slide.description,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          height: 1.4,
+                        ),
+                      ),
+
+                      const Spacer(),
+
+                      // optional CTA (cleaner than next/prev buttons)
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: TextButton(
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () {},
+                          child: const Text('Learn more →'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+
+        const SizedBox(height: 10),
+
+        // ================= DOT INDICATOR =================
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(slides.length, (index) {
+            final active = index == _currentIndex;
+
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              height: 6,
+              width: active ? 22 : 8,
+              decoration: BoxDecoration(
+                color: active
+                    ? Theme.of(context).colorScheme.primary
+                    : Colors.black26,
+                borderRadius: BorderRadius.circular(20),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class FeaturedArtistSection extends StatelessWidget {
+  const FeaturedArtistSection({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    // stable dedupe (keeps order instead of Set randomizing)
+    final artists = <String>[];
+    for (final artwork in MockSeeder.artworks) {
+      if (!artists.contains(artwork.artistName)) {
+        artists.add(artwork.artistName);
+      }
+    }
+
+    if (artists.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    // sort by rating (better "featured" logic)
+    artists.sort((a, b) =>
+        MockSeeder.averageRating(b).compareTo(
+              MockSeeder.averageRating(a),
+            ));
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Featured artists',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const Spacer(),
+            TextButton(
+              onPressed: () {},
+              child: const Text('See all'),
+            ),
           ],
         ),
         const SizedBox(height: 10),
-        GridView.builder(
-          itemCount: artworks.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            mainAxisExtent: 252,
+
+        SizedBox(
+          height: 190,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: artists.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              final artistName = artists[index];
+              final rating = MockSeeder.averageRating(artistName);
+
+              final role = index == 0
+                  ? 'Top artist'
+                  : index < 3
+                      ? 'Featured creator'
+                      : 'Bukidnon artist';
+
+              return _FeaturedArtistCard(
+                artistName: artistName,
+                rating: rating,
+                role: role,
+              );
+            },
           ),
-          itemBuilder: (context, index) {
-            final item = artworks[index];
-            return ArtworkCard(
-              artwork: item,
-              onTap: () => context.push('/artwork/${item.id}'),
-            );
-          },
         ),
       ],
+    );
+  }
+}
+
+
+class _FeaturedArtistCard extends StatelessWidget {
+  const _FeaturedArtistCard({
+    required this.artistName,
+    required this.rating,
+    required this.role,
+  });
+
+  final String artistName;
+  final double rating;
+  final String role;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.primary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          // later: navigate to artist profile
+          // context.push('/artist/$artistName');
+        },
+        child: Container(
+          width: 185,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // avatar
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  artistName.isNotEmpty ? artistName[0] : 'A',
+                  style: TextStyle(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 20,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              Text(
+                artistName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+                role,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.black54,
+                ),
+              ),
+
+              const Spacer(),
+
+              // rating row
+              Row(
+                children: [
+                  Icon(Icons.star, size: 16, color: Colors.amber.shade700),
+                  const SizedBox(width: 4),
+                  Text(
+                    rating == 0 ? 'New' : rating.toStringAsFixed(1),
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+
+              SizedBox(
+                width: double.infinity,
+                height: 34,
+                child: FilledButton.tonal(
+                  onPressed: () {},
+                  child: const Text('View profile'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -1359,195 +1784,275 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .toList();
     final averageRating = MockSeeder.averageRating(displayName);
 
+    final aboutText = bio.isEmpty
+        ? 'Share a bit about your creative journey, style, or local craftsmanship.'
+        : bio;
+
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(0),
       children: [
-        Center(
-          child: Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1E5CE),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              userInitial,
-              style: const TextStyle(fontSize: 36, fontWeight: FontWeight.w700),
+        Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).colorScheme.primary,
+                Theme.of(context).colorScheme.primary.withOpacity(0.82),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
           ),
-        ),
-        const SizedBox(height: 10),
-        Center(
-          child: Text(
-            displayName,
-            style: Theme.of(context).textTheme.headlineSmall,
-            textAlign: TextAlign.center,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Center(
-          child: Text(
-            username,
-            style: const TextStyle(
-              color: Colors.black54,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 22),
-            child: Text(
-              bio,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 12, color: Colors.black54),
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: Chip(
-            label: Text(
-              auth.isAdmin
-                  ? 'Admin'
-                  : auth.isVerifiedArtist
-                  ? 'Verified Artist'
-                  : auth.isArtist
-                  ? 'Artist'
-                  : 'Buyer',
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            visualDensity: VisualDensity.compact,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _StatColumn(label: 'ARTWORKS', value: '${works.length}'),
-            _StatColumn(
-              label: 'SALES',
-              value: '${MockSeeder.soldArtworkIds.length}',
-            ),
-            _StatColumn(
-              label: 'RATING',
-              value: averageRating == 0 ? '-' : averageRating.toStringAsFixed(1),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              SizedBox(
-                width: 132,
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push('/edit-profile'),
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 12,
-                    ),
-                  ),
-                  label: const Text(
-                    'Edit Profile',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 116,
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push('/orders'),
-                  icon: const Icon(Icons.inventory_2_outlined, size: 18),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 12,
-                    ),
-                  ),
-                  label: const Text(
-                    'Orders',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (auth.isAdmin)
-                SizedBox(
-                  width: 112,
-                  child: OutlinedButton.icon(
-                    onPressed: () => context.push('/admin'),
-                    icon: const Icon(Icons.settings_outlined, size: 18),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 12,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Profile',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                    ),
-                    label: const Text(
-                      'Admin',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                      IconButton(
+                        onPressed: () => context.push('/edit-profile'),
+                        icon: const Icon(Icons.edit, color: Colors.white),
+                      ),
+                    ],
                   ),
-                ),
-            ],
+                  const SizedBox(height: 14),
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        padding: const EdgeInsets.fromLTRB(16, 66, 16, 16),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 36),
+                            Text(
+                              displayName,
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    color: Colors.black87,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              username,
+                              style: const TextStyle(
+                                color: Colors.black54,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Chip(
+                                  label: Text(
+                                    auth.isAdmin
+                                        ? 'Admin'
+                                        : auth.isVerifiedArtist
+                                            ? 'Verified Artist'
+                                            : auth.isArtist
+                                                ? 'Artist'
+                                                : 'Buyer',
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                                const SizedBox(width: 10),
+                                Chip(
+                                  label: Text(auth.isArtist ? 'Creator' : 'Collector'),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: -44,
+                        child: Center(
+                          child: Container(
+                            width: 88,
+                            height: 88,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1E5CE),
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.12),
+                                  blurRadius: 18,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              userInitial,
+                              style: const TextStyle(
+                                fontSize: 36,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton(
-                onPressed: () => setState(() => _showArtworks = true),
-                child: const Text('Artworks'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => setState(() => _showArtworks = false),
-                child: const Text('Commissions'),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        if (_showArtworks)
-          if (works.isEmpty)
-            const _ProfileEmptyState(
-              title: 'No artworks yet',
-              subtitle: 'Upload your first artwork to get started',
-              cta: 'Upload Artwork',
-              icon: Icons.palette_outlined,
-              route: '/create',
-            )
-          else
-            ...works.map((item) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: ArtworkCard(
-                  artwork: item,
-                  onTap: () => context.push('/artwork/${item.id}'),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('About', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-              );
-            }),
-        if (_showArtworks && works.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          ...works.map((item) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  aboutText,
+                  style: const TextStyle(color: Colors.black87, height: 1.5),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _StatColumn(label: 'ARTWORKS', value: '${works.length}'),
+                  _StatColumn(label: 'SALES', value: '${MockSeeder.soldArtworkIds.length}'),
+                  _StatColumn(
+                    label: 'RATING',
+                    value: averageRating == 0 ? '-' : averageRating.toStringAsFixed(1),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.push('/orders'),
+                      icon: const Icon(Icons.inventory_2_outlined, size: 18),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      label: const Text('Orders'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  if (auth.isAdmin)
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.push('/admin'),
+                        icon: const Icon(Icons.settings_outlined, size: 18),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        label: const Text('Admin'),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+Padding(
+  padding: const EdgeInsets.symmetric(horizontal: 16),
+  child: Column(
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _StatColumn(label: 'ARTWORKS', value: '${works.length}'),
+          _StatColumn(label: 'SALES', value: '${MockSeeder.soldArtworkIds.length}'),
+          _StatColumn(
+            label: 'RATING',
+            value: averageRating == 0 ? '-' : averageRating.toStringAsFixed(1),
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 12),
+
+      Row(
+        children: [
+          Expanded(
+            child: FilledButton(
+              onPressed: () => setState(() => _showArtworks = true),
+              child: const Text('Artworks'),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: () => setState(() => _showArtworks = false),
+              child: const Text('Commissions'),
+            ),
+          ),
+        ],
+      ),
+    ],
+  ),
+),
+        const SizedBox(height: 8),
+
+if (_showArtworks) ...[
+  if (works.isEmpty)
+    const _ProfileEmptyState(
+      title: 'No artworks yet',
+      subtitle: 'Upload your first artwork to get started',
+      cta: 'Upload Artwork',
+      icon: Icons.palette_outlined,
+      route: '/create',
+    )
+  else
+    ...works.map((item) => Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            children: [
+              ArtworkCard(
+                artwork: item,
+                onTap: () => context.push('/artwork/${item.id}'),
+              ),
+              const SizedBox(height: 6),
+              Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
@@ -1570,9 +2075,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ],
               ),
-            );
-          }),
-        ],
+            ],
+          ),
+        )),
+],
         if (!_showArtworks)
           const _ProfileEmptyState(
             title: 'No commissions yet',
@@ -2811,7 +3317,7 @@ Widget _statusChip(String status) {
   return Container(
     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
     decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.12),
+      color: color.withOpacity(0.12),
       borderRadius: BorderRadius.circular(999),
     ),
     child: Text(

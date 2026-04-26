@@ -39,6 +39,7 @@ dependencies:
   intl: ^0.20.2
   google_fonts: ^8.0.2
   image_picker: ^1.2.1
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +64,8 @@ flutter:
 
   assets:
     - assets/images/artflow_logo.png
+    - assets/images/bukidnon_artists_logo.png
+    - assets/images/artizan_logo.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

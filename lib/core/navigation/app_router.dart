@@ -4,6 +4,7 @@ import '../../features/auth/domain/auth_status.dart';
 import '../../features/auth/presentation/auth_state.dart';
 import '../widgets/app_scaffold.dart';
 import '../../features/screens/screens.dart';
+import '../../features/screens/welcome_screen.dart';
 
 GoRouter createRouter(AuthState authState) {
   return GoRouter(
@@ -13,6 +14,7 @@ GoRouter createRouter(AuthState authState) {
       final path = state.uri.path;
       final authPaths = {
         '/splash',
+        '/welcome',
         '/register',
         '/onboarding/buyer',
         '/onboarding/artist',
@@ -22,9 +24,13 @@ GoRouter createRouter(AuthState authState) {
         return '/splash';
       }
 
-      if (authState.status == AuthStatus.unauthenticated &&
-          !authPaths.contains(path)) {
-        return '/register';
+      if (authState.status == AuthStatus.unauthenticated) {
+        if (!authState.welcomeCompleted && path != '/welcome' && path != '/splash') {
+          return '/welcome';
+        }
+        if (!authPaths.contains(path)) {
+          return '/register';
+        }
       }
 
       if (authState.status == AuthStatus.authenticated &&
@@ -45,6 +51,7 @@ GoRouter createRouter(AuthState authState) {
     },
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashScreen()),
+      GoRoute(path: '/welcome', builder: (_, _) => const WelcomeScreen()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
       GoRoute(
         path: '/onboarding/buyer',

@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -13,7 +12,7 @@ import '../entities/models/artwork.dart';
 import '../payments/data/mock_payment_gateway.dart';
 import '../shared/data/mock_seeder.dart';
 import '../shared/widgets/artwork_card.dart';
-import 'widgets/admin_summary_panel.dart';
+import '../admin/presentation/screens/admin_dashboard_screen.dart';
 
 // ============================================================================
 // SPLASH SCREEN - Logo Animation Only
@@ -864,7 +863,7 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
-                    value: _selectedMedium,
+                    initialValue: _selectedMedium,
                     items: _mediums.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
                     onChanged: (val) => setState(() => _selectedMedium = val!),
                     decoration: InputDecoration(
@@ -1270,7 +1269,7 @@ class HomeScreen extends StatelessWidget {
                     width: 94,
                     height: 94,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
+                    errorBuilder: (_, _, _) => Container(
                       width: 94,
                       height: 94,
                       color: const Color(0xFFF1E5CE),
@@ -1302,7 +1301,7 @@ class HomeScreen extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: categories.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final label =
                   categories[index].replaceAll('_', ' ');
@@ -1628,7 +1627,7 @@ class FeaturedArtistSection extends StatelessWidget {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: artists.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               final artistName = artists[index];
               final rating = MockSeeder.averageRating(artistName);
@@ -1959,7 +1958,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         if (_showFilters) ...[
           const SizedBox(height: 10),
           DropdownButtonFormField<String>(
-            value: _sortBy,
+            initialValue: _sortBy,
             items: const [
               DropdownMenuItem(value: 'newest', child: Text('Newest First')),
               DropdownMenuItem(
@@ -2396,7 +2395,7 @@ class _CreateArtworkScreenState extends State<CreateArtworkScreen> {
             const SizedBox(width: 10),
             Expanded(
               child: DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: const InputDecoration(
                   labelText: 'Category *',
                   border: OutlineInputBorder(),
@@ -3666,7 +3665,7 @@ class _CommissionRequestScreenState extends State<CommissionRequestScreen> {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
-          value: _timeline,
+          initialValue: _timeline,
           items: const [
             DropdownMenuItem(value: '1 week', child: Text('1 week')),
             DropdownMenuItem(value: '2 weeks', child: Text('2 weeks')),
@@ -4079,287 +4078,20 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-class AdminScreen extends StatefulWidget {
+class AdminScreen extends StatelessWidget {
   const AdminScreen({super.key});
 
-  @override
-  State<AdminScreen> createState() => _AdminScreenState();
-}
-
-class _AdminScreenState extends State<AdminScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
     if (!auth.isAdmin) {
-      return const Center(
-        child: Text('Admin access only.'),
+      return const Scaffold(
+        body: Center(
+          child: Text('Admin access only.'),
+        ),
       );
     }
-    final reports = [
-      'Flagged artwork: Metro Pulse',
-      'Dispute opened: Order #902',
-      'Commission delay escalation',
-    ];
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => auth.setUnauthenticated(),
-          ),
-        ],
-      ),
-      body: DefaultTabController(
-        length: 3,
-        child: Column(
-          children: [
-            const TabBar(
-              tabs: [
-                Tab(text: 'Moderation'),
-                Tab(text: 'Users'),
-                Tab(text: 'Verify'),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  ListView(
-                    padding: const EdgeInsets.all(12),
-                    children: reports.map((item) {
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        child: ListTile(
-                          title: Text(item),
-                          trailing: FilledButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Report reviewed (mock).'),
-                                ),
-                              );
-                            },
-                            child: const Text('Review'),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  AdminSummaryPanel(
-                    activeUsers: 1284,
-                    artistCount: MockSeeder.artworks
-                        .map((e) => e.artistName)
-                        .toSet()
-                        .length,
-                    buyerCount: 855,
-                    unreadNotifications: MockSeeder.unreadNotificationCount,
-                  ),
-                  ListView(
-                    padding: const EdgeInsets.all(12),
-                    children: [
-                      Text(
-                        'Artist Applications',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: auth.getPendingApplications(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          final docs = snapshot.data?.docs ?? [];
-                          if (docs.isEmpty) {
-                            return const Card(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text('No pending artist applications.'),
-                              ),
-                            );
-                          }
-                          return Column(
-                            children: docs.map((doc) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              final sampleArtworks = List<String>.from(data['sampleArtworks'] ?? []);
-                              
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                child: ExpansionTile(
-                                  title: Text(data['displayName'] ?? 'Unknown'),
-                                  subtitle: Text(data['email'] ?? ''),
-                                  childrenPadding: const EdgeInsets.all(16),
-                                  children: [
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.palette_outlined, size: 16),
-                                        const SizedBox(width: 8),
-                                        Text('Style: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        Text(data['artStyle'] ?? 'Not specified'),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Row(
-                                      children: [
-                                        const Icon(Icons.category_outlined, size: 16),
-                                        const SizedBox(width: 8),
-                                        Text('Medium: ', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                        Text(data['medium'] ?? 'Not specified'),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    const Text('Bio:', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    const SizedBox(height: 4),
-                                    Text(data['bio'] ?? 'No bio provided'),
-                                    const SizedBox(height: 16),
-                                    if (sampleArtworks.isNotEmpty) ...[
-                                      const Text('Sample Artworks:', style: TextStyle(fontWeight: FontWeight.bold)),
-                                      const SizedBox(height: 8),
-                                      SizedBox(
-                                        height: 120,
-                                        child: ListView.separated(
-                                          scrollDirection: Axis.horizontal,
-                                          itemCount: sampleArtworks.length,
-                                          separatorBuilder: (_, __) => const SizedBox(width: 8),
-                                          itemBuilder: (context, index) {
-                                            return ClipRRect(
-                                              borderRadius: BorderRadius.circular(8),
-                                              child: Image.network(
-                                                sampleArtworks[index],
-                                                width: 120,
-                                                height: 120,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (_, __, ___) => Container(
-                                                  width: 120,
-                                                  height: 120,
-                                                  color: Colors.grey[200],
-                                                  child: const Icon(Icons.image_not_supported),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                      const SizedBox(height: 20),
-                                    ],
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        OutlinedButton(
-                                          onPressed: () async {
-                                            await auth.rejectUser(doc.id);
-                                            if (context.mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Artist application rejected.')),
-                                              );
-                                            }
-                                          },
-                                          style: OutlinedButton.styleFrom(
-                                            foregroundColor: Colors.red,
-                                            side: const BorderSide(color: Colors.red),
-                                          ),
-                                          child: const Text('Reject'),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        FilledButton(
-                                          onPressed: () async {
-                                            await auth.approveUser(doc.id);
-                                            if (context.mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text('Artist approved!')),
-                                              );
-                                            }
-                                          },
-                                          child: const Text('Approve'),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Scholar Applications',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 8),
-                      StreamBuilder<QuerySnapshot>(
-                        stream: auth.getPendingScholarApplications(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          }
-                          final docs = snapshot.data?.docs ?? [];
-                          if (docs.isEmpty) {
-                            return const Card(
-                              child: Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Text('No pending scholar applications.'),
-                              ),
-                            );
-                          }
-                          return Column(
-                            children: docs.map((doc) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              return Card(
-                                child: ListTile(
-                                  title: Text(data['displayName'] ?? 'Unknown'),
-                                  subtitle: Text(data['email'] ?? ''),
-                                  trailing: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      OutlinedButton(
-                                        onPressed: () async {
-                                          await auth.rejectUser(doc.id, isScholar: true);
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Scholar application rejected.')),
-                                            );
-                                          }
-                                        },
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: Colors.red,
-                                          side: const BorderSide(color: Colors.red),
-                                        ),
-                                        child: const Text('Reject'),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      FilledButton(
-                                        onPressed: () async {
-                                          await auth.approveUser(doc.id, isScholar: true);
-                                          if (context.mounted) {
-                                            ScaffoldMessenger.of(context).showSnackBar(
-                                              const SnackBar(content: Text('Scholar approved!')),
-                                            );
-                                          }
-                                        },
-                                        child: const Text('Approve'),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+    return const AdminDashboardScreen();
   }
 }
 

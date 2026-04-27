@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "577596756711",
+    "project_id": "artflow-b5709",
+    "storage_bucket": "artflow-b5709.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:577596756711:android:d3dd769a115a5fa41f0842",
+        "android_client_info": {
+          "package_name": "com.example.artflow_flutter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "577596756711-4tk7bnnpt0411k9ncir1jmnc53kn36mi.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDnZSTYKA_vmy25mSbLUKBHm8cFcaHahpY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "577596756711-4tk7bnnpt0411k9ncir1jmnc53kn36mi.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

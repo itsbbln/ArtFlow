@@ -173,24 +173,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     if (!_validateInputs()) return;
 
     final auth = context.read<AuthState>();
     
     if (_isLogin) {
-      // Simulate login
-      auth.setAuthenticated(role: UserRole.buyer);
-      context.go('/');
+      await auth.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+      if (mounted && auth.isAuthenticated) {
+        context.go('/');
+      }
     } else {
-      // Register new account
-      auth.register(
+      await auth.register(
         name: _fullNameController.text.trim(),
         role: 'buyer',
         email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
-      // Navigate to buyer onboarding (artist can apply later)
-      context.go('/onboarding/buyer');
+      if (mounted && auth.isAuthenticated) {
+        context.go('/onboarding/buyer');
+      }
     }
   }
 
@@ -203,7 +208,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/get-started'),
+          onPressed: () => context.go('/welcome'),
         ),
       ),
       body: Container(
@@ -677,7 +682,6 @@ class ArtistOnboardingScreen extends StatefulWidget {
 class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
   final _styleController = TextEditingController();
   final _bioController = TextEditingController();
-  int _currentStep = 0;
 
   @override
   void dispose() {

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -40,39 +41,103 @@ class AuthState extends ChangeNotifier {
   Future<void> initialize() async {
     _status = AuthStatus.checking;
     notifyListeners();
+    
     _status = await _service.checkSession();
+    
+    if (_status == AuthStatus.authenticated) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Ensure admin details are reflected in the database
+        await _service.ensureAdminRole(user);
+        
+        final doc = await _service.getUserData(user.uid);
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          _displayName = data['displayName'] ?? 'User';
+          _username = data['username'] ?? '@user';
+          final roleStr = data['role'] ?? 'buyer';
+          _role = roleStr == 'admin' ? UserRole.admin : (roleStr == 'artist' ? UserRole.artist : UserRole.buyer);
+        }
+      }
+    }
+
     // Load welcome completion status
     final prefs = await SharedPreferences.getInstance();
     _welcomeCompleted = prefs.getBool('welcome_completed') ?? false;
     notifyListeners();
   }
 
-  void setUnauthenticated() {
+  Future<void> login({required String email, required String password}) async {
+    try {
+      _status = AuthStatus.checking;
+      notifyListeners();
+      
+      final credential = await _service.loginWithEmail(email: email, password: password);
+      if (credential.user != null) {
+        // Ensure admin details are reflected in the database
+        await _service.ensureAdminRole(credential.user!);
+        
+        final doc = await _service.getUserData(credential.user!.uid);
+        if (doc.exists) {
+          final data = doc.data() as Map<String, dynamic>;
+          _displayName = data['displayName'] ?? 'User';
+          _username = data['username'] ?? '@user';
+          final roleStr = data['role'] ?? 'buyer';
+          _role = roleStr == 'admin' ? UserRole.admin : (roleStr == 'artist' ? UserRole.artist : UserRole.buyer);
+          _status = AuthStatus.authenticated;
+        }
+      }
+    } catch (e) {
+      _status = AuthStatus.unauthenticated;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  Future<void> register({
+    required String name,
+    required String role,
+    required String email,
+    required String password,
+  }) async {
+    try {
+      _status = AuthStatus.checking;
+      notifyListeners();
+
+      final credential = await _service.registerWithEmail(
+        email: email,
+        password: password,
+        name: name,
+        role: role,
+      );
+
+      if (credential.user != null) {
+        _displayName = name.trim();
+        _username = '@${name.toLowerCase().trim().replaceAll(' ', '')}';
+        _role = role == 'artist' ? UserRole.artist : UserRole.buyer;
+        if (email.toLowerCase() == 'admin@artflow.app' || email.toLowerCase() == 'adminpageturner@gmail.com') {
+          _role = UserRole.admin;
+        }
+        _status = AuthStatus.authenticated;
+      }
+    } catch (e) {
+      _status = AuthStatus.unauthenticated;
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  Future<void> setUnauthenticated() async {
+    await _service.signOut();
     _status = AuthStatus.unauthenticated;
     notifyListeners();
   }
 
-  void setAuthenticated({UserRole role = UserRole.buyer}) {
-    _status = AuthStatus.authenticated;
+  void setAuthenticated({required UserRole role}) {
     _role = role;
-    notifyListeners();
-  }
-
-  void register({
-    required String name,
-    required String role,
-    required String email,
-  }) {
     _status = AuthStatus.authenticated;
-    _displayName = name.trim();
-    _username = '@${name.toLowerCase().trim().replaceAll(' ', '')}';
-    _bio = role == 'artist'
-        ? 'Emerging artist open for commissions.'
-        : 'Art enthusiast exploring local creators.';
-    _role = role == 'artist' ? UserRole.artist : UserRole.buyer;
-    if (email.toLowerCase() == 'admin@artflow.app') {
-      _role = UserRole.admin;
-    }
+    _displayName = 'Guest ${role == UserRole.artist ? 'Artist' : 'Buyer'}';
+    _username = '@guest';
     notifyListeners();
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,6 +25,11 @@ class AuthState extends ChangeNotifier {
   bool _portfolioPack = false;
   bool _featuredBoost = false;
   bool _welcomeCompleted = false;
+  bool _isVerified = false;
+  bool _verificationSubmitted = false;
+  bool _isScholarVerified = false;
+  bool _scholarVerificationSubmitted = false;
+  StreamSubscription? _userSubscription;
 
   bool get isAuthenticated => _status == AuthStatus.authenticated;
   UserRole get role => _role;
@@ -30,6 +37,10 @@ class AuthState extends ChangeNotifier {
   String get username => _username;
   String get bio => _bio;
   String get style => _style;
+  bool get isVerified => _isVerified;
+  bool get verificationSubmitted => _verificationSubmitted;
+  bool get isScholarVerified => _isScholarVerified;
+  bool get scholarVerificationSubmitted => _scholarVerificationSubmitted;
   bool get isVerifiedArtist => _verifiedArtist;
   bool get hasPortfolioPack => _portfolioPack;
   bool get hasFeaturedBoost => _featuredBoost;
@@ -49,15 +60,7 @@ class AuthState extends ChangeNotifier {
       if (user != null) {
         // Ensure admin details are reflected in the database
         await _service.ensureAdminRole(user);
-        
-        final doc = await _service.getUserData(user.uid);
-        if (doc.exists) {
-          final data = doc.data() as Map<String, dynamic>;
-          _displayName = data['displayName'] ?? 'User';
-          _username = data['username'] ?? '@user';
-          final roleStr = data['role'] ?? 'buyer';
-          _role = roleStr == 'admin' ? UserRole.admin : (roleStr == 'artist' ? UserRole.artist : UserRole.buyer);
-        }
+        _startUserSubscription(user.uid);
       }
     }
 
@@ -76,16 +79,8 @@ class AuthState extends ChangeNotifier {
       if (credential.user != null) {
         // Ensure admin details are reflected in the database
         await _service.ensureAdminRole(credential.user!);
-        
-        final doc = await _service.getUserData(credential.user!.uid);
-        if (doc.exists) {
-          final data = doc.data() as Map<String, dynamic>;
-          _displayName = data['displayName'] ?? 'User';
-          _username = data['username'] ?? '@user';
-          final roleStr = data['role'] ?? 'buyer';
-          _role = roleStr == 'admin' ? UserRole.admin : (roleStr == 'artist' ? UserRole.artist : UserRole.buyer);
-          _status = AuthStatus.authenticated;
-        }
+        _startUserSubscription(credential.user!.uid);
+        _status = AuthStatus.authenticated;
       }
     } catch (e) {
       _status = AuthStatus.unauthenticated;
@@ -112,12 +107,7 @@ class AuthState extends ChangeNotifier {
       );
 
       if (credential.user != null) {
-        _displayName = name.trim();
-        _username = '@${name.toLowerCase().trim().replaceAll(' ', '')}';
-        _role = role == 'artist' ? UserRole.artist : UserRole.buyer;
-        if (email.toLowerCase() == 'admin@artflow.app' || email.toLowerCase() == 'adminpageturner@gmail.com') {
-          _role = UserRole.admin;
-        }
+        _startUserSubscription(credential.user!.uid);
         _status = AuthStatus.authenticated;
       }
     } catch (e) {
@@ -127,10 +117,91 @@ class AuthState extends ChangeNotifier {
     }
   }
 
+  Future<void> submitArtistApplication({
+    required String bio,
+    required String style,
+    required String medium,
+    required List<String> sampleArtworks,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      await _service.updateUserProfile(user.uid, {
+        'bio': bio,
+        'artStyle': style,
+        'medium': medium,
+        'sampleArtworks': sampleArtworks,
+        'verificationSubmitted': true,
+        'role': 'artist', // Update role to artist (pending verification)
+      });
+
+      _verificationSubmitted = true;
+      _role = UserRole.artist;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error submitting artist application: $e');
+    }
+  }
+
+  Future<void> submitScholarVerification({
+    required String schoolIdUrl,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      await _service.updateUserProfile(user.uid, {
+        'schoolIdUrl': schoolIdUrl,
+        'scholarVerificationSubmitted': true,
+        'isScholarVerified': false,
+      });
+
+      _scholarVerificationSubmitted = true;
+      _isScholarVerified = false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error submitting scholar verification: $e');
+    }
+  }
+
   Future<void> setUnauthenticated() async {
+    await _userSubscription?.cancel();
+    _userSubscription = null;
     await _service.signOut();
     _status = AuthStatus.unauthenticated;
+    _isVerified = false;
+    _verificationSubmitted = false;
+    _isScholarVerified = false;
+    _scholarVerificationSubmitted = false;
     notifyListeners();
+  }
+
+  void _startUserSubscription(String uid) {
+    _userSubscription?.cancel();
+    _userSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .snapshots()
+        .listen((doc) {
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        _displayName = data['displayName'] ?? 'User';
+        _username = data['username'] ?? '@user';
+        _isVerified = data['isVerified'] ?? false;
+        _verifiedArtist = _isVerified; // Keep in sync
+        _verificationSubmitted = data['verificationSubmitted'] ?? false;
+        _isScholarVerified = data['isScholarVerified'] ?? false;
+        _scholarVerificationSubmitted = data['scholarVerificationSubmitted'] ?? false;
+        _bio = data['bio'] ?? '';
+        _style = data['artStyle'] ?? '';
+        
+        final roleStr = data['role'] ?? 'buyer';
+        _role = roleStr == 'admin' ? UserRole.admin : (roleStr == 'artist' ? UserRole.artist : UserRole.buyer);
+        
+        notifyListeners();
+      }
+    });
   }
 
   void setAuthenticated({required UserRole role}) {
@@ -171,6 +242,23 @@ class AuthState extends ChangeNotifier {
   void setVerifiedArtist(bool value) {
     _verifiedArtist = value;
     notifyListeners();
+  }
+
+  // Admin methods
+  Stream<QuerySnapshot> getPendingApplications() {
+    return _service.getPendingApplications();
+  }
+
+  Stream<QuerySnapshot> getPendingScholarApplications() {
+    return _service.getPendingScholarApplications();
+  }
+
+  Future<void> approveUser(String uid, {bool isScholar = false}) async {
+    await _service.approveUser(uid, isScholar: isScholar);
+  }
+
+  Future<void> rejectUser(String uid, {bool isScholar = false}) async {
+    await _service.rejectUser(uid, isScholar: isScholar);
   }
 
   void enablePortfolioPack() {

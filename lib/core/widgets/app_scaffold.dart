@@ -40,6 +40,62 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
 
+    if (!auth.isVerified && !auth.isAdmin) {
+      return Scaffold(
+        body: Stack(
+          children: [
+            child,
+            if (location != '/verification')
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    color: const Color(0xFFB71B1B),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline,
+                            color: Colors.white, size: 20),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Account pending verification. Limited access.',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => context.go('/verification'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            'View Details',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
     return Scaffold(
       endDrawer: Drawer(
         child: Container(

@@ -34,14 +34,15 @@ class AuthService {
 
     if (credential.user != null) {
       final userEmail = email.toLowerCase();
-      final userRole = (userEmail == 'adminpageturner@gmail.com' || userEmail == 'admin@artflow.app') 
-          ? 'admin' 
-          : role;
+      final isAdminEmail = userEmail == 'adminpageturner@gmail.com' || userEmail == 'adminpageturener@gmail.com' || userEmail == 'admin@artflow.app';
+      final userRole = isAdminEmail ? 'admin' : role;
       await _firestore.collection('users').doc(credential.user!.uid).set({
         'uid': credential.user!.uid,
         'displayName': name,
         'email': email,
         'role': userRole,
+        'isVerified': isAdminEmail,
+        'verificationSubmitted': false,
         'username': '@${name.toLowerCase().trim().replaceAll(' ', '')}',
         'createdAt': FieldValue.serverTimestamp(),
       });
@@ -70,19 +71,67 @@ class AuthService {
 
   Future<void> ensureAdminRole(User user) async {
     final email = user.email?.toLowerCase();
-    if (email == 'adminpageturner@gmail.com' || email == 'admin@artflow.app') {
+    if (email == 'adminpageturner@gmail.com' || email == 'adminpageturener@gmail.com' || email == 'admin@artflow.app') {
       await _firestore.collection('users').doc(user.uid).update({
         'role': 'admin',
+        'isVerified': true,
       }).catchError((e) async {
         // If update fails (e.g. document doesn't exist), try to set it
         await _firestore.collection('users').doc(user.uid).set({
           'uid': user.uid,
           'email': user.email,
           'role': 'admin',
+          'isVerified': true,
           'displayName': user.displayName ?? 'Admin',
           'username': '@admin',
           'createdAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+      });
+    }
+  }
+
+  Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
+    await _firestore.collection('users').doc(uid).update(data);
+  }
+
+  Stream<QuerySnapshot> getPendingApplications() {
+    return _firestore
+        .collection('users')
+        .where('verificationSubmitted', isEqualTo: true)
+        .where('isVerified', isEqualTo: false)
+        .snapshots();
+  }
+
+  Stream<QuerySnapshot> getPendingScholarApplications() {
+    return _firestore
+        .collection('users')
+        .where('scholarVerificationSubmitted', isEqualTo: true)
+        .where('isScholarVerified', isEqualTo: false)
+        .snapshots();
+  }
+
+  Future<void> approveUser(String uid, {bool isScholar = false}) async {
+    if (isScholar) {
+      await _firestore.collection('users').doc(uid).update({
+        'isScholarVerified': true,
+      });
+    } else {
+      await _firestore.collection('users').doc(uid).update({
+        'isVerified': true,
+      });
+    }
+  }
+
+  Future<void> rejectUser(String uid, {bool isScholar = false}) async {
+    if (isScholar) {
+      await _firestore.collection('users').doc(uid).update({
+        'scholarVerificationSubmitted': false,
+        'isScholarVerified': false,
+      });
+    } else {
+      await _firestore.collection('users').doc(uid).update({
+        'verificationSubmitted': false,
+        'isVerified': false,
       });
     }
   }

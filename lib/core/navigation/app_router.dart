@@ -6,6 +6,7 @@ import '../widgets/app_scaffold.dart';
 import '../../features/screens/screens.dart';
 import '../../features/screens/welcome_screen.dart';
 import '../../features/screens/become_artist_screen.dart';
+import '../../features/screens/scholar_verification_screen.dart';
 
 GoRouter createRouter(AuthState authState) {
   return GoRouter(
@@ -19,14 +20,21 @@ GoRouter createRouter(AuthState authState) {
         '/register',
         '/onboarding/buyer',
         '/onboarding/artist',
+        '/verification',
       };
 
-      if (authState.status == AuthStatus.checking && path != '/splash') {
+      if (authState.status == AuthStatus.checking && 
+          path != '/splash' && 
+          path != '/register' && 
+          path != '/welcome') {
         return '/splash';
       }
 
       if (authState.status == AuthStatus.unauthenticated) {
-        if (!authState.welcomeCompleted && path != '/welcome' && path != '/splash') {
+        if (path == '/splash') {
+          return '/welcome';
+        }
+        if (!authState.welcomeCompleted && path != '/welcome') {
           return '/welcome';
         }
         if (!authPaths.contains(path)) {
@@ -34,9 +42,21 @@ GoRouter createRouter(AuthState authState) {
         }
       }
 
-      if (authState.status == AuthStatus.authenticated &&
-          authPaths.contains(path)) {
-        return '/';
+      if (authState.status == AuthStatus.authenticated) {
+        // If they are an admin, redirect them to the admin dashboard if they are on entry pages
+        if (authState.isAdmin && (path == '/register' || path == '/welcome' || path == '/splash' || path == '/')) {
+          return '/admin';
+        }
+
+        // Only redirect from register/welcome if authenticated
+        if (path == '/register' || path == '/welcome' || path == '/splash') {
+          return '/';
+        }
+        
+        // If they are already a verified artist, don't let them go to onboarding again
+        if (authState.isVerifiedArtist && (path == '/onboarding/artist' || path == '/become-artist')) {
+          return '/artist-dashboard';
+        }
       }
 
       if (path == '/admin' && !authState.isAdmin) {
@@ -61,6 +81,10 @@ GoRouter createRouter(AuthState authState) {
       GoRoute(
         path: '/onboarding/artist',
         builder: (_, _) => const ArtistOnboardingScreen(),
+      ),
+      GoRoute(
+        path: '/verification',
+        builder: (_, _) => const VerificationPage(),
       ),
       ShellRoute(
         builder: (context, state, child) {
@@ -97,6 +121,10 @@ GoRouter createRouter(AuthState authState) {
           GoRoute(
             path: '/become-artist',
             builder: (_, _) => const BecomeArtistScreen(),
+          ),
+          GoRoute(
+            path: '/scholar-verification',
+            builder: (_, _) => const ScholarVerificationScreen(),
           ),
           GoRoute(path: '/messages', builder: (_, _) => const MessagesScreen()),
           GoRoute(

@@ -56,7 +56,7 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
     }
   }
 
-  void _submitApplication() {
+  void _submitApplication() async {
     if (!_isStepValid(0) || !_isStepValid(1) || !_isStepValid(2)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please complete all steps')),
@@ -65,31 +65,139 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
     }
 
     final auth = context.read<AuthState>();
-    // In a real app, this would send the application to the backend
-    // For now, we'll just mark the user as having applied
-    auth.completeArtistOnboarding(
-      style: _styleController.text.trim(),
-      bio: _bioController.text.trim(),
+    
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Application submitted! Admins will review your portfolio within 2-3 business days.',
-        ),
-        duration: Duration(seconds: 4),
-      ),
-    );
+    try {
+      await auth.submitArtistApplication(
+        bio: _bioController.text.trim(),
+        style: _styleController.text.trim(),
+        medium: _selectedMedium!,
+        sampleArtworks: [
+          'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5',
+          'https://images.unsplash.com/photo-1541963463532-d68292c34b19',
+        ], // Mock sample artworks
+      );
 
-    Future.delayed(const Duration(milliseconds: 1500), () {
       if (mounted) {
-        context.go('/profile');
+        Navigator.of(context).pop(); // Dismiss loading
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Application submitted! Admins will review your portfolio within 2-3 business days.',
+            ),
+            duration: Duration(seconds: 4),
+          ),
+        );
+
+        context.go('/verification');
       }
-    });
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthState>();
+
+    if (auth.verificationSubmitted && !auth.isVerified) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.pending_actions_outlined, size: 80, color: Colors.orange),
+                const SizedBox(height: 24),
+                Text(
+                  'Application Pending',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Your artist verification is currently under review. This usually takes 2-3 business days. We will notify you once your application has been processed.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54, height: 1.5),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Back to Profile'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (auth.isVerified) {
+      return Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.verified_user_outlined, size: 80, color: Colors.green),
+                const SizedBox(height: 24),
+                Text(
+                  'Already Verified!',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'You are already a verified artist on ArtFlow. You can start uploading your artworks and accepting commissions.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.black54, height: 1.5),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('Back to Profile'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(

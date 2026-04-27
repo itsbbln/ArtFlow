@@ -1,11 +1,13 @@
 import 'dart:typed_data';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../auth/domain/auth_status.dart';
 import '../auth/presentation/auth_state.dart';
 import '../entities/models/artwork.dart';
 import '../payments/data/mock_payment_gateway.dart';
@@ -47,12 +49,8 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
 
-    // Navigate after animation completes
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        context.go('/welcome');
-      }
-    });
+    // No manual navigation here anymore.
+    // GoRouter's redirect logic handles navigation based on AuthStatus.
   }
 
   @override
@@ -184,7 +182,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text,
       );
       if (mounted && auth.isAuthenticated) {
-        context.go('/');
+        if (auth.isAdmin) {
+          context.go('/admin');
+        } else {
+          context.go('/');
+        }
       }
     } else {
       await auth.register(
@@ -194,13 +196,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text,
       );
       if (mounted && auth.isAuthenticated) {
-        context.go('/onboarding/buyer');
+        context.go('/verification');
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthState>();
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -341,20 +344,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 52,
                 child: FilledButton(
-                  onPressed: _handleSubmit,
+                  onPressed: auth.status == AuthStatus.checking ? null : _handleSubmit,
                   style: FilledButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    _isLogin ? 'Sign In' : 'Create Account',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                  child: auth.status == AuthStatus.checking
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _isLogin ? 'Sign In' : 'Create Account',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
-                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -415,6 +427,92 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class VerificationPage extends StatelessWidget {
+  const VerificationPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthState>();
+    final isArtist = auth.role == UserRole.artist;
+
+    return Scaffold(
+      body: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Theme.of(context).scaffoldBackgroundColor,
+              const Color(0xFFFAEBDC).withOpacity(0.6),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.pending_actions_rounded,
+                  size: 80,
+                  color: Color(0xFFB71B1B),
+                ),
+                const SizedBox(height: 32),
+                Text(
+                  'Account Under Review',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isArtist
+                      ? 'Your artist application has been submitted. Our team is currently reviewing your profile and sample artworks. This usually takes 24-48 hours.'
+                      : 'Thank you for registering! Your account is currently being verified by our administrators. You will have limited access until the process is complete.',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Colors.black54,
+                      ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => context.go('/'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB71B1B),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Continue with Limited Access'),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextButton(
+                  onPressed: () async {
+                    await auth.setUnauthenticated();
+                    if (context.mounted) context.go('/welcome');
+                  },
+                  child: const Text(
+                    'Log Out',
+                    style: TextStyle(color: Colors.black54),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -682,6 +780,20 @@ class ArtistOnboardingScreen extends StatefulWidget {
 class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
   final _styleController = TextEditingController();
   final _bioController = TextEditingController();
+  String _selectedMedium = 'Painting';
+  final List<String> _sampleArtworks = [];
+  bool _isSubmitting = false;
+
+  static const _mediums = [
+    'Painting',
+    'Digital Art',
+    'Photography',
+    'Sculpture',
+    'Illustration',
+    'Mixed Media',
+    'Printmaking',
+    'Other',
+  ];
 
   @override
   void dispose() {
@@ -691,8 +803,11 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
   }
 
   bool _isComplete() {
+    final bio = _bioController.text.trim();
     return _styleController.text.trim().isNotEmpty &&
-        _bioController.text.trim().isNotEmpty;
+        bio.isNotEmpty &&
+        bio.length <= 500 &&
+        _sampleArtworks.isNotEmpty;
   }
 
   @override
@@ -736,6 +851,40 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                     ),
               ),
               const SizedBox(height: 32),
+
+              // Primary Art Style
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Primary Medium *',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedMedium,
+                    items: _mediums.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                    onChanged: (val) => setState(() => _selectedMedium = val!),
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.category_outlined),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
 
               // Primary Art Style
               Column(
@@ -802,10 +951,12 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   TextField(
                     controller: _bioController,
                     maxLines: 4,
+                    maxLength: 500,
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText:
                           'Tell collectors about your creative journey, inspiration, and what makes your work unique...',
+                      counterText: '', // Hide default counter to use custom one below
                       hintStyle: TextStyle(
                         color: Colors.black26,
                       ),
@@ -846,6 +997,93 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                 ],
               ),
 
+              const SizedBox(height: 24),
+
+              // Sample Artworks
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Sample Artworks (Optional)',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 100,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        // Add Button
+                        GestureDetector(
+                          onTap: () {
+                            // Simulate adding an image
+                            setState(() {
+                              _sampleArtworks.add(MockSeeder.placeholder);
+                            });
+                          },
+                          child: Container(
+                            width: 100,
+                            margin: const EdgeInsets.only(right: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: const Color(0xFFE4D8CB), style: BorderStyle.solid),
+                            ),
+                            child: const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.add_photo_alternate_outlined, color: Colors.black54),
+                                SizedBox(height: 4),
+                                Text('Add Image', style: TextStyle(fontSize: 10, color: Colors.black54)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        // Image List
+                        ..._sampleArtworks.asMap().entries.map((entry) {
+                          return Stack(
+                            children: [
+                              Container(
+                                width: 100,
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                  image: DecorationImage(
+                                    image: NetworkImage(entry.value),
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 4,
+                                right: 16,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setState(() {
+                                      _sampleArtworks.removeAt(entry.key);
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.black54,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.close, size: 12, color: Colors.white),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
               const SizedBox(height: 40),
 
               // CTA Buttons
@@ -853,13 +1091,20 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                 width: double.infinity,
                 height: 52,
                 child: FilledButton(
-                  onPressed: _isComplete()
-                      ? () {
-                          context.read<AuthState>().completeArtistOnboarding(
-                            style: _styleController.text.trim(),
-                            bio: _bioController.text.trim(),
-                          );
-                          context.go('/artist-dashboard');
+                  onPressed: _isComplete() && !_isSubmitting
+                      ? () async {
+                          setState(() => _isSubmitting = true);
+                          try {
+                            await context.read<AuthState>().submitArtistApplication(
+                                  style: _styleController.text.trim(),
+                                  bio: _bioController.text.trim(),
+                                  medium: _selectedMedium,
+                                  sampleArtworks: _sampleArtworks,
+                                );
+                            if (mounted) context.go('/verification');
+                          } finally {
+                            if (mounted) setState(() => _isSubmitting = false);
+                          }
                         }
                       : null,
                   style: FilledButton.styleFrom(
@@ -868,13 +1113,22 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    'Launch Dashboard',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          'Launch Dashboard',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
                         ),
-                  ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -909,6 +1163,7 @@ class HomeScreen extends StatelessWidget {
     final artworks = MockSeeder.artworks;
     final featured = artworks.where((item) => item.isFeatured).toList();
     final categories = MockSeeder.categories;
+    final myCommissions = MockSeeder.commissions;
 
     final firstFeatured =
         featured.isNotEmpty ? featured.first : null;
@@ -1518,11 +1773,19 @@ class ArtistDashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
     final commissions = MockSeeder.commissions;
+    final openCommissions = commissions.where((c) {
+      final s = c.status.toLowerCase();
+      return s == 'pending' || s == 'active' || s == 'in review';
+    }).length;
+    final completedCommissions = commissions.where((c) => c.status.toLowerCase() == 'completed').length;
     final myArtworks = MockSeeder.artworks
         .where((item) => item.artistName == auth.displayName)
         .toList();
     final avgRating = MockSeeder.averageRating(auth.displayName);
-    final revenue = MockSeeder.orders.fold<double>(
+    final myArtworkIds = myArtworks.map((a) => a.id).toSet();
+    final revenue = MockSeeder.orders
+        .where((o) => myArtworkIds.contains(o.artworkId))
+        .fold<double>(
       0,
       (sum, item) => sum + item.total,
     );
@@ -1535,11 +1798,11 @@ class ArtistDashboardScreen extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 12),
-        const Row(
+        Row(
           children: [
-            Expanded(child: _MetricCard(label: 'Open Commissions', value: '8')),
-            SizedBox(width: 10),
-            Expanded(child: _MetricCard(label: 'Completed', value: '42')),
+            Expanded(child: _MetricCard(label: 'Open Commissions', value: '$openCommissions')),
+            const SizedBox(width: 10),
+            Expanded(child: _MetricCard(label: 'Completed', value: '$completedCommissions')),
           ],
         ),
         const SizedBox(height: 10),
@@ -2293,6 +2556,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         .where((item) => item.artistName == displayName)
         .toList();
     final averageRating = MockSeeder.averageRating(displayName);
+    final salesCount = works.where((w) => MockSeeder.isSold(w.id)).length;
+    final commissions = MockSeeder.commissions;
 
     final aboutText = bio.isEmpty
         ? 'Share a bit about your creative journey, style, or local craftsmanship.'
@@ -2463,13 +2728,184 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   _StatColumn(label: 'ARTWORKS', value: '${works.length}'),
-                  _StatColumn(label: 'SALES', value: '${MockSeeder.soldArtworkIds.length}'),
+                  _StatColumn(label: 'SALES', value: '$salesCount'),
                   _StatColumn(
                     label: 'RATING',
                     value: averageRating == 0 ? '-' : averageRating.toStringAsFixed(1),
                   ),
                 ],
               ),
+              const SizedBox(height: 24),
+              
+              // Artist Verification Section
+              if (!auth.isVerified && auth.role != UserRole.admin)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.palette_outlined, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Artist Verification',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                          ),
+                          if (auth.verificationSubmitted) ...[
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Pending',
+                                style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        auth.verificationSubmitted
+                            ? 'Your artist application is being reviewed. You will be notified once approved.'
+                            : 'Become a verified artist to showcase your work and receive commissions.',
+                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
+                      if (!auth.verificationSubmitted) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => context.push('/become-artist'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text('Apply for Artist Verification'),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+              // Scholar Tier Section
+              if (!auth.isScholarVerified)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFB71B1B).withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFB71B1B).withOpacity(0.1)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.school_outlined, color: Color(0xFFB71B1B)),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Scholar Tier',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFFB71B1B),
+                                ),
+                          ),
+                          if (auth.scholarVerificationSubmitted) ...[
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'Pending',
+                                style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        auth.scholarVerificationSubmitted
+                            ? 'Your scholar application is being reviewed. You will be notified once approved.'
+                            : 'Students get exclusive benefits and discounts. Apply now with your School ID.',
+                        style: const TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
+                      if (!auth.scholarVerificationSubmitted) ...[
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => context.push('/scholar-verification'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFB71B1B),
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                            child: const Text('Apply for Scholar Benefits'),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              
+              if (auth.isScholarVerified)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.green.withOpacity(0.1)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.verified_user, color: Colors.green),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Verified Scholar',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                          ),
+                          const Text(
+                            'You are enjoying student benefits!',
+                            style: TextStyle(fontSize: 12, color: Colors.black54),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -2502,45 +2938,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 12),
-
-Padding(
-  padding: const EdgeInsets.symmetric(horizontal: 16),
-  child: Column(
-    children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _StatColumn(label: 'ARTWORKS', value: '${works.length}'),
-          _StatColumn(label: 'SALES', value: '${MockSeeder.soldArtworkIds.length}'),
-          _StatColumn(
-            label: 'RATING',
-            value: averageRating == 0 ? '-' : averageRating.toStringAsFixed(1),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: _showArtworks
+                    ? FilledButton(
+                        onPressed: () => setState(() => _showArtworks = true),
+                        child: const Text('Artworks'),
+                      )
+                    : OutlinedButton(
+                        onPressed: () => setState(() => _showArtworks = true),
+                        child: const Text('Artworks'),
+                      ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: !_showArtworks
+                    ? FilledButton(
+                        onPressed: () => setState(() => _showArtworks = false),
+                        child: const Text('Commissions'),
+                      )
+                    : OutlinedButton(
+                        onPressed: () => setState(() => _showArtworks = false),
+                        child: const Text('Commissions'),
+                      ),
+              ),
+            ],
           ),
-        ],
-      ),
-
-      const SizedBox(height: 12),
-
-      Row(
-        children: [
-          Expanded(
-            child: FilledButton(
-              onPressed: () => setState(() => _showArtworks = true),
-              child: const Text('Artworks'),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: OutlinedButton(
-              onPressed: () => setState(() => _showArtworks = false),
-              child: const Text('Commissions'),
-            ),
-          ),
-        ],
-      ),
-    ],
-  ),
-),
+        ),
         const SizedBox(height: 8),
 
 if (_showArtworks) ...[
@@ -2589,14 +3016,29 @@ if (_showArtworks) ...[
           ),
         )),
 ],
-        if (!_showArtworks)
-          const _ProfileEmptyState(
-            title: 'No commissions yet',
-            subtitle: 'Commission requests will appear here.',
-            cta: 'Explore',
-            icon: Icons.request_page_outlined,
-            route: '/explore',
-          ),
+        if (!_showArtworks) ...[
+          if (commissions.isEmpty)
+            const _ProfileEmptyState(
+              title: 'No commissions yet',
+              subtitle: 'Commission requests will appear here.',
+              cta: 'Explore',
+              icon: Icons.request_page_outlined,
+              route: '/explore',
+            )
+          else
+            ...commissions.map((item) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    tileColor: Theme.of(context).colorScheme.surfaceContainerLow,
+                    title: Text(item.title),
+                    subtitle: Text('Budget ₱${item.budget.toStringAsFixed(0)}'),
+                    trailing: _statusChip(item.status),
+                  ),
+                )),
+        ],
       ],
     );
   }
@@ -3659,94 +4101,263 @@ class _AdminScreenState extends State<AdminScreen> {
       'Commission delay escalation',
     ];
 
-    return DefaultTabController(
-      length: 3,
-      child: Column(
-        children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'Moderation'),
-              Tab(text: 'Users'),
-              Tab(text: 'Verify'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                ListView(
-                  padding: const EdgeInsets.all(12),
-                  children: reports.map((item) {
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ListTile(
-                        title: Text(item),
-                        trailing: FilledButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Report reviewed (mock).'),
-                              ),
-                            );
-                          },
-                          child: const Text('Review'),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                AdminSummaryPanel(
-                  activeUsers: 1284,
-                  artistCount: MockSeeder.artworks
-                      .map((e) => e.artistName)
-                      .toSet()
-                      .length,
-                  buyerCount: 855,
-                  unreadNotifications: MockSeeder.unreadNotificationCount,
-                ),
-                ListView(
-                  padding: const EdgeInsets.all(12),
-                  children: [
-                    Card(
-                      child: ListTile(
-                        title: const Text('Verify Featured Artist Account'),
-                        subtitle: Text(
-                          auth.isVerifiedArtist
-                              ? 'Already verified'
-                              : 'Pending verification',
-                        ),
-                        trailing: FilledButton(
-                          onPressed: () {
-                            auth.setVerifiedArtist(true);
-                            setState(() {});
-                          },
-                          child: const Text('Approve'),
-                        ),
-                      ),
-                    ),
-                    Card(
-                      child: ListTile(
-                        title: const Text('Manual Promotion Review'),
-                        subtitle: const Text(
-                          'Approve featured boost and portfolio extensions.',
-                        ),
-                        trailing: OutlinedButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Promotion approval logged.'),
-                              ),
-                            );
-                          },
-                          child: const Text('Open'),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Admin Dashboard', style: TextStyle(fontWeight: FontWeight.bold)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => auth.setUnauthenticated(),
           ),
         ],
+      ),
+      body: DefaultTabController(
+        length: 3,
+        child: Column(
+          children: [
+            const TabBar(
+              tabs: [
+                Tab(text: 'Moderation'),
+                Tab(text: 'Users'),
+                Tab(text: 'Verify'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: reports.map((item) {
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        child: ListTile(
+                          title: Text(item),
+                          trailing: FilledButton(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Report reviewed (mock).'),
+                                ),
+                              );
+                            },
+                            child: const Text('Review'),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  AdminSummaryPanel(
+                    activeUsers: 1284,
+                    artistCount: MockSeeder.artworks
+                        .map((e) => e.artistName)
+                        .toSet()
+                        .length,
+                    buyerCount: 855,
+                    unreadNotifications: MockSeeder.unreadNotificationCount,
+                  ),
+                  ListView(
+                    padding: const EdgeInsets.all(12),
+                    children: [
+                      Text(
+                        'Artist Applications',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      StreamBuilder<QuerySnapshot>(
+                        stream: auth.getPendingApplications(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final docs = snapshot.data?.docs ?? [];
+                          if (docs.isEmpty) {
+                            return const Card(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text('No pending artist applications.'),
+                              ),
+                            );
+                          }
+                          return Column(
+                            children: docs.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final sampleArtworks = List<String>.from(data['sampleArtworks'] ?? []);
+                              
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                child: ExpansionTile(
+                                  title: Text(data['displayName'] ?? 'Unknown'),
+                                  subtitle: Text(data['email'] ?? ''),
+                                  childrenPadding: const EdgeInsets.all(16),
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.palette_outlined, size: 16),
+                                        const SizedBox(width: 8),
+                                        Text('Style: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        Text(data['artStyle'] ?? 'Not specified'),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.category_outlined, size: 16),
+                                        const SizedBox(width: 8),
+                                        Text('Medium: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        Text(data['medium'] ?? 'Not specified'),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    const Text('Bio:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 4),
+                                    Text(data['bio'] ?? 'No bio provided'),
+                                    const SizedBox(height: 16),
+                                    if (sampleArtworks.isNotEmpty) ...[
+                                      const Text('Sample Artworks:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 8),
+                                      SizedBox(
+                                        height: 120,
+                                        child: ListView.separated(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: sampleArtworks.length,
+                                          separatorBuilder: (_, __) => const SizedBox(width: 8),
+                                          itemBuilder: (context, index) {
+                                            return ClipRRect(
+                                              borderRadius: BorderRadius.circular(8),
+                                              child: Image.network(
+                                                sampleArtworks[index],
+                                                width: 120,
+                                                height: 120,
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (_, __, ___) => Container(
+                                                  width: 120,
+                                                  height: 120,
+                                                  color: Colors.grey[200],
+                                                  child: const Icon(Icons.image_not_supported),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+                                    ],
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        OutlinedButton(
+                                          onPressed: () async {
+                                            await auth.rejectUser(doc.id);
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Artist application rejected.')),
+                                              );
+                                            }
+                                          },
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: Colors.red,
+                                            side: const BorderSide(color: Colors.red),
+                                          ),
+                                          child: const Text('Reject'),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        FilledButton(
+                                          onPressed: () async {
+                                            await auth.approveUser(doc.id);
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(content: Text('Artist approved!')),
+                                              );
+                                            }
+                                          },
+                                          child: const Text('Approve'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Scholar Applications',
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      StreamBuilder<QuerySnapshot>(
+                        stream: auth.getPendingScholarApplications(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
+                          final docs = snapshot.data?.docs ?? [];
+                          if (docs.isEmpty) {
+                            return const Card(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: Text('No pending scholar applications.'),
+                              ),
+                            );
+                          }
+                          return Column(
+                            children: docs.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              return Card(
+                                child: ListTile(
+                                  title: Text(data['displayName'] ?? 'Unknown'),
+                                  subtitle: Text(data['email'] ?? ''),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      OutlinedButton(
+                                        onPressed: () async {
+                                          await auth.rejectUser(doc.id, isScholar: true);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Scholar application rejected.')),
+                                            );
+                                          }
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.red,
+                                          side: const BorderSide(color: Colors.red),
+                                        ),
+                                        child: const Text('Reject'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      FilledButton(
+                                        onPressed: () async {
+                                          await auth.approveUser(doc.id, isScholar: true);
+                                          if (context.mounted) {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(content: Text('Scholar approved!')),
+                                            );
+                                          }
+                                        },
+                                        child: const Text('Approve'),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

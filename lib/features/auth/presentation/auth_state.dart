@@ -121,7 +121,10 @@ class AuthState extends ChangeNotifier {
     required String bio,
     required String style,
     required String medium,
-    required List<String> sampleArtworks,
+    required String penName,
+    required String portfolioUrl,
+    String? additionalDetails,
+    List<String> sampleArtworks = const [],
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -131,6 +134,9 @@ class AuthState extends ChangeNotifier {
         'bio': bio,
         'artStyle': style,
         'medium': medium,
+        'penName': penName,
+        'portfolioUrl': portfolioUrl,
+        'additionalDetails': additionalDetails,
         'sampleArtworks': sampleArtworks,
         'verificationSubmitted': true,
         'role': 'artist', // Update role to artist (pending verification)

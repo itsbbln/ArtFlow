@@ -67,6 +67,9 @@ class ArtistVerificationApplication {
   final String bio;
   final String artStyle;
   final String medium;
+  final String penName;
+  final String portfolioUrl;
+  final String additionalDetails;
   final List<String> sampleArtworks;
   final String identityVerificationUrl;
   final DateTime submittedDate;
@@ -80,6 +83,9 @@ class ArtistVerificationApplication {
     required this.bio,
     required this.artStyle,
     required this.medium,
+    required this.penName,
+    required this.portfolioUrl,
+    required this.additionalDetails,
     required this.sampleArtworks,
     required this.identityVerificationUrl,
     required this.submittedDate,

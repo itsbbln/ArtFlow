@@ -25,10 +25,78 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   late TabController _tabController;
   final _adminRepository = AdminRepository();
 
+  int _lastNotificationCount = 0;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 9, vsync: this);
+  }
+
+  void _showNotificationsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Admin Notifications'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 400,
+          child: MockSeeder.notifications.isEmpty
+              ? const Center(child: Text('No notifications'))
+              : ListView.builder(
+                  itemCount: MockSeeder.notifications.length,
+                  itemBuilder: (context, index) {
+                    final notification = MockSeeder.notifications[index];
+                    return ListTile(
+                      leading: Icon(
+                        notification.read
+                            ? Icons.notifications_none
+                            : Icons.notifications_active,
+                        color: notification.read ? Colors.grey : Colors.orange,
+                      ),
+                      title: Text(
+                        notification.title,
+                        style: TextStyle(
+                          fontWeight: notification.read
+                              ? FontWeight.normal
+                              : FontWeight.bold,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(notification.body),
+                          Text(
+                            notification.createdAt.toString().split('.')[0],
+                            style: const TextStyle(fontSize: 10),
+                          ),
+                        ],
+                      ),
+                      onTap: () {
+                        // Mark as read would require updating MockSeeder
+                        // For now just close
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              MockSeeder.markAllNotificationsRead();
+              setState(() {});
+              Navigator.pop(context);
+            },
+            child: const Text('Mark all as read'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -45,6 +113,45 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           'Admin Control Panel',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications_outlined),
+                onPressed: () {
+                  // Show notifications (could be a dialog or navigate to notifications screen)
+                  _showNotificationsDialog(context);
+                },
+              ),
+              if (MockSeeder.unreadNotificationCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${MockSeeder.unreadNotificationCount}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
         elevation: 2,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(50),
@@ -108,9 +215,17 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
                 future: _adminRepository.getPendingArtistApplicationsCount(),
                 builder: (context, pendingSnapshot) {
                   if (pendingSnapshot.hasData && pendingSnapshot.data! > 0) {
-                    WidgetsBinding.instance.addPostFrameCallback((_) {
-                      _showPendingVerificationNotification(pendingSnapshot.data!);
-                    });
+                    final pendingCount = pendingSnapshot.data!;
+                    
+                    // Only add notification if the count has changed
+                    if (pendingCount != _lastNotificationCount) {
+                      _lastNotificationCount = pendingCount;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _showPendingVerificationNotification(pendingCount);
+                        // Force rebuild to show the notification badge in AppBar
+                        setState(() {});
+                      });
+                    }
                     
                     return Container(
                       margin: const EdgeInsets.only(bottom: 16),

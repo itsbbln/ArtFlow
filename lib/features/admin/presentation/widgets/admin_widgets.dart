@@ -75,23 +75,68 @@ class AdminUserListItem extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      color: isPendingArtist ? Colors.orange.withOpacity(0.05) : null,
+      color: isPendingArtist ? Colors.orange.withValues(alpha: 0.05) : null,
       child: ListTile(
-        title: Row(
-          children: [
-            Expanded(child: Text(displayName)),
-            if (isPendingArtist) ...[
-              const SizedBox(width: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: SizedBox(
+          width: 80,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: statusColor.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  accountType,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: statusColor,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Expanded(
+              child: Text(
+                displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            if (isPendingArtist) ...[
+              const SizedBox(width: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: Colors.orange,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Text(
                   'Needs Verification',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: 9,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
@@ -100,47 +145,54 @@ class AdminUserListItem extends StatelessWidget {
             ],
           ],
         ),
-        subtitle: Text(email),
-        trailing: PopupMenuButton(
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              child: const Text('View Details'),
-              onTap: onViewDetails,
-            ),
-            PopupMenuItem(
-              child: const Text('Suspend'),
-              onTap: onSuspend,
-            ),
-            PopupMenuItem(
-              child: const Text('Ban'),
-              onTap: onBan,
-            ),
-          ],
+        subtitle: Text(
+          email,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-        leading: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                accountType,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: statusColor,
-                  fontWeight: FontWeight.bold,
-                ),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            switch (value) {
+              case 'view':
+                onViewDetails();
+                break;
+              case 'suspend':
+                onSuspend();
+                break;
+              case 'ban':
+                onBan();
+                break;
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'view',
+              child: ListTile(
+                leading: Icon(Icons.visibility_outlined),
+                title: Text('View Details'),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              status,
-              style: TextStyle(
-                fontSize: 10,
-                color: statusColor,
+            const PopupMenuItem(
+              value: 'suspend',
+              child: ListTile(
+                leading: Icon(Icons.block_outlined),
+                title: Text('Suspend'),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              ),
+            ),
+            PopupMenuItem(
+              value: 'ban',
+              child: ListTile(
+                leading: const Icon(Icons.delete_forever_outlined, color: Colors.red),
+                title: Text(
+                  'Ban User',
+                  style: TextStyle(color: Colors.red[700]),
+                ),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
               ),
             ),
           ],
@@ -218,7 +270,7 @@ class ArtworkModerationCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.2),
+                      color: Colors.red.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
@@ -237,7 +289,7 @@ class ArtworkModerationCard extends StatelessWidget {
                         .map((issue) => Chip(
                               label: Text(issue),
                               labelStyle: const TextStyle(fontSize: 10),
-                              backgroundColor: Colors.red.withOpacity(0.2),
+                              backgroundColor: Colors.red.withValues(alpha: 0.2),
                             ))
                         .toList(),
                   ),
@@ -387,7 +439,7 @@ class DisputeCaseCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.2),
+                color: Colors.orange.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(

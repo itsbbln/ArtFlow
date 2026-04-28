@@ -370,8 +370,8 @@ class AppScaffold extends StatelessWidget {
                             active: _selectedIndex() == 1,
                             onTap: () => context.go(_tabs[1]),
                           ),
-                          // Upload only for artists
-                          if (auth.isArtist)
+                          // Upload only for verified artists
+                          if (auth.isVerified)
                             _BottomItem(
                               icon: Icons.add_box_outlined,
                               label: 'Upload',

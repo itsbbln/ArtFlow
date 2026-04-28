@@ -58,7 +58,7 @@ GoRouter createRouter(AuthState authState) {
       }
 
       if ((path == '/create' || path.startsWith('/create/')) &&
-          !authState.isArtist) {
+          !authState.isVerified && !authState.isAdmin) {
         return '/';
       }
 

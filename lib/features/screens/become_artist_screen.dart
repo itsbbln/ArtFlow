@@ -18,11 +18,15 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
   final _styleController = TextEditingController();
   final _bioController = TextEditingController();
   final _experienceController = TextEditingController();
+  final _penNameController = TextEditingController();
+  final _portfolioController = TextEditingController();
+  final _additionalDetailsController = TextEditingController();
   String? _selectedMedium;
   bool _agreeToTerms = false;
   int _currentStep = 0;
 
   static const _mediums = [
+    'Traditional',
     'Painting',
     'Digital Art',
     'Photography',
@@ -34,10 +38,35 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    // Add listeners to update UI when text changes (fixes Next button being disabled)
+    _styleController.addListener(_onTextChanged);
+    _bioController.addListener(_onTextChanged);
+    _experienceController.addListener(_onTextChanged);
+    _penNameController.addListener(_onTextChanged);
+    _portfolioController.addListener(_onTextChanged);
+    _additionalDetailsController.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    setState(() {});
+  }
+
+  @override
   void dispose() {
+    _styleController.removeListener(_onTextChanged);
+    _bioController.removeListener(_onTextChanged);
+    _experienceController.removeListener(_onTextChanged);
+    _penNameController.removeListener(_onTextChanged);
+    _portfolioController.removeListener(_onTextChanged);
+    _additionalDetailsController.removeListener(_onTextChanged);
     _styleController.dispose();
     _bioController.dispose();
     _experienceController.dispose();
+    _penNameController.dispose();
+    _portfolioController.dispose();
+    _additionalDetailsController.dispose();
     super.dispose();
   }
 
@@ -47,9 +76,11 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
         return _selectedMedium != null;
       case 1:
         return _styleController.text.trim().isNotEmpty &&
-            _bioController.text.trim().isNotEmpty;
+            _bioController.text.trim().isNotEmpty &&
+            _penNameController.text.trim().isNotEmpty;
       case 2:
         return _experienceController.text.trim().isNotEmpty &&
+            _portfolioController.text.trim().isNotEmpty &&
             _agreeToTerms;
       default:
         return false;
@@ -78,6 +109,9 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
         bio: _bioController.text.trim(),
         style: _styleController.text.trim(),
         medium: _selectedMedium!,
+        penName: _penNameController.text.trim(),
+        portfolioUrl: _portfolioController.text.trim(),
+        additionalDetails: _additionalDetailsController.text.trim(),
         sampleArtworks: [
           'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5',
           'https://images.unsplash.com/photo-1541963463532-d68292c34b19',
@@ -199,7 +233,6 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
     }
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -207,212 +240,319 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
         ),
+        // Use a preferred size to minimize space if needed, but standard is usually fine
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
               Theme.of(context).scaffoldBackgroundColor,
-              const Color(0xFFFAEBDC).withOpacity(0.6),
+              const Color(0xFFFAEBDC).withValues(alpha: 0.6),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            children: [
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          children: [
+            // Header
+            Text(
+              'Become a Verified Artist',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Share your creative work with our community. Showcase your portfolio and connect with collectors.',
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.black54,
+                    height: 1.5,
+                  ),
+            ),
+            const SizedBox(height: 32),
+
+            // Step Indicator
+            _StepIndicator(currentStep: _currentStep),
+            const SizedBox(height: 32),
+
+            // Step 1: Select Medium
+            if (_currentStep == 0) ...[
+              Text(
+                'What is your primary art medium? *',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: _mediums.map((medium) {
+                  final selected = _selectedMedium == medium;
+                  return FilterChip(
+                    selected: selected,
+                    label: Text(medium),
+                    backgroundColor: Colors.white,
+                    selectedColor: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.2),
+                    side: BorderSide(
+                      color: selected
+                          ? Theme.of(context).colorScheme.primary
+                          : const Color(0xFFE4D8CB),
+                      width: selected ? 1.5 : 1,
+                    ),
+                    onSelected: (value) {
+                      setState(() => _selectedMedium = value ? medium : null);
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
+
+            // Step 2: About Your Art
+            if (_currentStep == 1) ...[
+              Text(
+                'Artist Pen Name *',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _penNameController,
+                decoration: InputDecoration(
+                  hintText: 'Enter your artist or pen name',
+                  hintStyle: const TextStyle(color: Colors.black26),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
               const SizedBox(height: 20),
-
-              // Header
               Text(
-                'Become a Verified Artist',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
+                'Tell us about your artistic style *',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _styleController,
+                decoration: InputDecoration(
+                  hintText: 'e.g., Abstract, Contemporary, Digital',
+                  hintStyle: const TextStyle(color: Colors.black26),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
               Text(
-                'Share your creative work with our community. Showcase your portfolio and connect with collectors.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                'About your art and creative journey *',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _bioController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText:
+                      'Share your artistic vision, inspiration, what makes your work unique...',
+                  hintStyle: const TextStyle(color: Colors.black26),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.5,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${_bioController.text.length}/500 characters',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.black54,
-                      height: 1.5,
                     ),
               ),
-              const SizedBox(height: 32),
+            ],
 
-              // Step Indicator
-              _StepIndicator(currentStep: _currentStep),
-              const SizedBox(height: 32),
-
-              // Step 1: Select Medium
-              if (_currentStep == 0) ...[
-                Text(
-                  'What is your primary art medium? *',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: _mediums.map((medium) {
-                    final selected = _selectedMedium == medium;
-                    return FilterChip(
-                      selected: selected,
-                      label: Text(medium),
-                      backgroundColor: Colors.white,
-                      selectedColor: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withOpacity(0.2),
-                      side: BorderSide(
-                        color: selected
-                            ? Theme.of(context).colorScheme.primary
-                            : const Color(0xFFE4D8CB),
-                        width: selected ? 1.5 : 1,
-                      ),
-                      onSelected: (value) {
-                        setState(() => _selectedMedium = value ? medium : null);
-                      },
-                    );
-                  }).toList(),
-                ),
-              ],
-
-              // Step 2: About Your Art
-              if (_currentStep == 1) ...[
-                Text(
-                  'Tell us about your artistic style *',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _styleController,
-                  decoration: InputDecoration(
-                    hintText: 'e.g., Abstract, Contemporary, Digital',
-                    hintStyle: TextStyle(color: Colors.black26),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+            // Step 3: Experience & Agreement
+            if (_currentStep == 2) ...[
+              Text(
+                'Your creative background *',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 1.5,
-                      ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _experienceController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText:
+                      'Years of experience, awards, exhibitions, or notable works...',
+                  hintStyle: const TextStyle(color: Colors.black26),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.5,
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-                Text(
-                  'About your art and creative journey *',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _bioController,
-                  maxLines: 4,
-                  decoration: InputDecoration(
-                    hintText:
-                        'Share your artistic vision, inspiration, what makes your work unique...',
-                    hintStyle: TextStyle(color: Colors.black26),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Portfolio Link (Sample Work) *',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 1.5,
-                      ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _portfolioController,
+                decoration: InputDecoration(
+                  hintText: 'Link to your portfolio (Behance, Dribbble, Website, etc.)',
+                  hintStyle: const TextStyle(color: Colors.black26),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.5,
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  '${_bioController.text.length}/500 characters',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.black54,
-                      ),
-                ),
-              ],
-
-              // Step 3: Experience & Agreement
-              if (_currentStep == 2) ...[
-                Text(
-                  'Your creative background *',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _experienceController,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText:
-                        'Years of experience, awards, exhibitions, or notable works...',
-                    hintStyle: TextStyle(color: Colors.black26),
-                    filled: true,
-                    fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 14,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Other Artist Details (Verification Proof)',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
                     ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 1.5,
-                      ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _additionalDetailsController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: 'Any other details or proof to help us verify you...',
+                  hintStyle: const TextStyle(color: Colors.black26),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 1.5,
                     ),
                   ),
                 ),
-                const SizedBox(height: 24),
-                _InfoBox(
-                  icon: Icons.info_outlined,
-                  title: 'Verification Process',
-                  description:
-                      'Your application will be reviewed by our admin team within 2-3 business days. Upload sample artworks to your portfolio to improve your chances of approval.',
-                ),
-                const SizedBox(height: 20),
+              ),
+              const SizedBox(height: 24),
+              const _InfoBox(
+                icon: Icons.info_outlined,
+                title: 'Verification Process',
+                description:
+                    'Your application will be reviewed by our admin team within 2-3 business days. Provide a clear portfolio link and any other proof to improve your chances of approval.',
+              ),
+              const SizedBox(height: 20),
                 CheckboxListTile(
                   contentPadding: EdgeInsets.zero,
                   value: _agreeToTerms,
@@ -492,8 +632,7 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }
 
@@ -580,13 +719,13 @@ class _InfoBox extends StatelessWidget {
         color: Theme.of(context)
             .colorScheme
             .primary
-            .withOpacity(0.08),
+            .withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: Theme.of(context)
               .colorScheme
               .primary
-              .withOpacity(0.2),
+              .withValues(alpha: 0.2),
         ),
       ),
       child: Column(

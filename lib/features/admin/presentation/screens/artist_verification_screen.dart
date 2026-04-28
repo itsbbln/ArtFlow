@@ -70,11 +70,34 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
           // Applicant details
           _buildDetailSection(context, 'Applicant Information', [
             ('Email', app.email),
+            ('Pen Name', app.penName),
             ('Art Style', app.artStyle),
             ('Medium', app.medium),
             ('Submitted', app.submittedDate.toString().split('.')[0]),
           ]),
           const SizedBox(height: 16),
+          // Portfolio Link
+          if (app.portfolioUrl.isNotEmpty) ...[
+            const Text(
+              'Portfolio Link',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.blue.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
+              ),
+              child: Text(
+                app.portfolioUrl,
+                style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.w500),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           // Bio
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -86,6 +109,7 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
+                width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
@@ -94,6 +118,28 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
               ),
             ],
           ),
+          if (app.additionalDetails.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Additional Details',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(app.additionalDetails),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           // Portfolio samples
           if (app.sampleArtworks.isNotEmpty) ...[
@@ -156,7 +202,7 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton(
-                onPressed: () => _showRejectDialog(context, app.applicationId),
+                onPressed: () => _showRejectDialog(context, app.applicationId, app.userId),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red,
                   side: const BorderSide(color: Colors.red),
@@ -226,7 +272,7 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
     }
   }
 
-  void _showRejectDialog(BuildContext context, String applicationId) {
+  void _showRejectDialog(BuildContext context, String applicationId, String userId) {
     final reasonController = TextEditingController();
     showDialog(
       context: context,
@@ -247,7 +293,7 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
           ),
           FilledButton(
             onPressed: () {
-              _rejectApplication(applicationId, reasonController.text);
+              _rejectApplication(applicationId, userId, reasonController.text);
               Navigator.pop(context);
             },
             child: const Text('Reject'),
@@ -257,9 +303,9 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
     );
   }
 
-  Future<void> _rejectApplication(String applicationId, String reason) async {
+  Future<void> _rejectApplication(String applicationId, String userId, String reason) async {
     try {
-      await _adminRepository.rejectArtistApplication(applicationId, '', reason);
+      await _adminRepository.rejectArtistApplication(applicationId, userId, reason);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Application rejected')),

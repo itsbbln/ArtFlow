@@ -776,6 +776,8 @@ class ArtistOnboardingScreen extends StatefulWidget {
 class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
   final _styleController = TextEditingController();
   final _bioController = TextEditingController();
+  final _penNameController = TextEditingController();
+  final _portfolioController = TextEditingController();
   String _selectedMedium = 'Painting';
   final List<String> _sampleArtworks = [];
   bool _isSubmitting = false;
@@ -795,6 +797,8 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
   void dispose() {
     _styleController.dispose();
     _bioController.dispose();
+    _penNameController.dispose();
+    _portfolioController.dispose();
     super.dispose();
   }
 
@@ -803,6 +807,8 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
     return _styleController.text.trim().isNotEmpty &&
         bio.isNotEmpty &&
         bio.length <= 500 &&
+        _penNameController.text.trim().isNotEmpty &&
+        _portfolioController.text.trim().isNotEmpty &&
         _sampleArtworks.isNotEmpty;
   }
 
@@ -919,6 +925,90 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                         borderSide: const BorderSide(
                           color: Color(0xFFE4D8CB),
                         ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Pen Name
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Artist Pen Name *',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _penNameController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'Enter your artist or pen name',
+                      hintStyle: const TextStyle(color: Colors.black26),
+                      prefixIcon: const Icon(Icons.person_outline),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Portfolio Link
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Portfolio Link *',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _portfolioController,
+                    onChanged: (_) => setState(() {}),
+                    decoration: InputDecoration(
+                      hintText: 'Link to your work (Behance, Dribbble, etc.)',
+                      hintStyle: const TextStyle(color: Colors.black26),
+                      prefixIcon: const Icon(Icons.link_outlined),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1095,6 +1185,8 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                                   style: _styleController.text.trim(),
                                   bio: _bioController.text.trim(),
                                   medium: _selectedMedium,
+                                  penName: _penNameController.text.trim(),
+                                  portfolioUrl: _portfolioController.text.trim(),
                                   sampleArtworks: _sampleArtworks,
                                 );
                             if (mounted) context.go('/verification');
@@ -1835,11 +1927,12 @@ class ArtistDashboardScreen extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
-        FilledButton.icon(
-          onPressed: () => context.push('/create'),
-          icon: const Icon(Icons.add),
-          label: const Text('Upload Artwork'),
-        ),
+        if (auth.isVerified)
+          FilledButton.icon(
+            onPressed: () => context.push('/create'),
+            icon: const Icon(Icons.add),
+            label: const Text('Upload Artwork'),
+          ),
         const SizedBox(height: 16),
         Text('Recent requests', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
@@ -2466,6 +2559,14 @@ class _CreateArtworkScreenState extends State<CreateArtworkScreen> {
         const SizedBox(height: 20),
         FilledButton.icon(
           onPressed: () {
+            if (!auth.isVerified && !auth.isAdmin) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('You must be a verified artist to publish artworks.'),
+                ),
+              );
+              return;
+            }
             final parsedPrice = double.tryParse(_priceController.text) ?? 0;
             if (_titleController.text.trim().isEmpty ||
                 _selectedCategory == null ||

@@ -62,8 +62,10 @@ class AdminRepository {
   Future<int> getPendingArtistApplicationsCount() async {
     try {
       final snapshot = await _firestore
-          .collection('artistApplications')
-          .where('status', isEqualTo: 'pending')
+          .collection('users')
+          .where('role', isEqualTo: 'artist')
+          .where('verificationSubmitted', isEqualTo: true)
+          .where('isVerified', isEqualTo: false)
           .get();
       return snapshot.docs.length;
     } catch (e) {
@@ -81,6 +83,7 @@ class AdminRepository {
         final isVerified = data['isVerified'] as bool? ?? false;
         final isScholarVerified = data['isScholarVerified'] as bool? ?? false;
         final scholarVerificationSubmitted = data['scholarVerificationSubmitted'] as bool? ?? false;
+        final verificationSubmitted = data['verificationSubmitted'] as bool? ?? false;
 
         UserAccountType accountType;
         if (role == 'artist') {
@@ -177,23 +180,30 @@ class AdminRepository {
   /// Get pending artist applications
   Stream<List<ArtistVerificationApplication>> getPendingApplications() {
     return _firestore
-        .collection('artistApplications')
-        .where('status', isEqualTo: 'pending')
+        .collection('users')
+        .where('role', isEqualTo: 'artist')
+        .where('verificationSubmitted', isEqualTo: true)
+        .where('isVerified', isEqualTo: false)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
         return ArtistVerificationApplication(
           applicationId: doc.id,
-          userId: data['userId'] as String? ?? '',
+          userId: doc.id,
           displayName: data['displayName'] as String? ?? '',
           email: data['email'] as String? ?? '',
           bio: data['bio'] as String? ?? '',
           artStyle: data['artStyle'] as String? ?? '',
           medium: data['medium'] as String? ?? '',
+          penName: data['penName'] as String? ?? '',
+          portfolioUrl: data['portfolioUrl'] as String? ?? '',
+          additionalDetails: data['additionalDetails'] as String? ?? '',
           sampleArtworks: List<String>.from(data['sampleArtworks'] as List? ?? []),
-          identityVerificationUrl: data['identityVerification'] as String? ?? '',
-          submittedDate: (data['submittedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          identityVerificationUrl: data['portfolioUrl'] as String? ?? '', // Use portfolioUrl as identity proof if needed
+          submittedDate: (data['updatedAt'] as Timestamp?)?.toDate() ?? 
+                         (data['createdAt'] as Timestamp?)?.toDate() ?? 
+                         DateTime.now(),
           status: ApplicationStatus.pending,
         );
       }).toList();
@@ -202,16 +212,11 @@ class AdminRepository {
 
   /// Approve artist application
   Future<void> approveArtistApplication(String applicationId, String userId) async {
-    await Future.wait([
-      _firestore.collection('artistApplications').doc(applicationId).update({
-        'status': 'approved',
-        'approvedAt': FieldValue.serverTimestamp(),
-      }),
-      _firestore.collection('users').doc(userId).update({
-        'isVerified': true,
-        'verifiedAt': FieldValue.serverTimestamp(),
-      }),
-    ]);
+    await _firestore.collection('users').doc(userId).update({
+      'isVerified': true,
+      'verifiedAt': FieldValue.serverTimestamp(),
+      'verificationStatus': 'approved',
+    });
   }
 
   /// Reject artist application with feedback
@@ -220,8 +225,10 @@ class AdminRepository {
     String userId,
     String rejectionReason,
   ) async {
-    await _firestore.collection('artistApplications').doc(applicationId).update({
-      'status': 'rejected',
+    await _firestore.collection('users').doc(userId).update({
+      'isVerified': false,
+      'verificationSubmitted': false, // Allow them to resubmit
+      'verificationStatus': 'rejected',
       'rejectionReason': rejectionReason,
       'rejectedAt': FieldValue.serverTimestamp(),
     });

@@ -24,11 +24,13 @@ class AdminUserInfo {
   final String userId;
   final String displayName;
   final String email;
-  final UserAccountType accountType; // Buyer, Artist (Verified/Pending)
+  final UserAccountType accountType; // Buyer, Artist, Scholar (Verified/Pending)
   final DateTime registeredDate;
   final String status; // Active, Suspended, Banned
   final List<String> activityLog;
   final bool isVerified;
+  final bool isScholarVerified;
+  final bool scholarVerificationSubmitted;
   final int totalPurchases;
   final int totalListings;
 
@@ -41,6 +43,8 @@ class AdminUserInfo {
     required this.status,
     required this.activityLog,
     required this.isVerified,
+    required this.isScholarVerified,
+    required this.scholarVerificationSubmitted,
     required this.totalPurchases,
     required this.totalListings,
   });
@@ -50,6 +54,8 @@ enum UserAccountType {
   buyer,
   artistPending,
   artistVerified,
+  scholarPending,
+  scholarVerified,
 }
 
 // Artist Verification Models
@@ -85,6 +91,27 @@ enum ApplicationStatus {
   pending,
   approved,
   rejected,
+}
+
+// Scholar Verification Models
+class ScholarVerificationApplication {
+  final String userId;
+  final String displayName;
+  final String email;
+  final String schoolIdUrl;
+  final DateTime submittedDate;
+  final ApplicationStatus status;
+  final String rejectionReason;
+
+  ScholarVerificationApplication({
+    required this.userId,
+    required this.displayName,
+    required this.email,
+    required this.schoolIdUrl,
+    required this.submittedDate,
+    required this.status,
+    required this.rejectionReason,
+  });
 }
 
 // Artwork Moderation Models

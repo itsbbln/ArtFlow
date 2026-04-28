@@ -33,6 +33,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 _buildFilterChip('Artists (Verified)'),
                 const SizedBox(width: 8),
                 _buildFilterChip('Artists (Pending)'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Scholars (Verified)'),
+                const SizedBox(width: 8),
+                _buildFilterChip('Scholars (Pending)'),
               ],
             ),
           ),
@@ -63,6 +67,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     return user.accountType == UserAccountType.artistVerified;
                   } else if (_filterType == 'Artists (Pending)') {
                     return user.accountType == UserAccountType.artistPending;
+                  } else if (_filterType == 'Scholars (Verified)') {
+                    return user.accountType == UserAccountType.scholarVerified;
+                  } else if (_filterType == 'Scholars (Pending)') {
+                    return user.accountType == UserAccountType.scholarPending;
                   }
                   return true;
                 }).toList();
@@ -117,6 +125,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         return 'Artist ✓';
       case UserAccountType.artistPending:
         return 'Artist (Pending)';
+      case UserAccountType.scholarVerified:
+        return 'Scholar ✓';
+      case UserAccountType.scholarPending:
+        return 'Scholar (Pending)';
     }
   }
 

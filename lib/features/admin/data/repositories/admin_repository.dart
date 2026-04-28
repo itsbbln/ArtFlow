@@ -79,10 +79,14 @@ class AdminRepository {
         final data = doc.data();
         final role = data['role'] as String?;
         final isVerified = data['isVerified'] as bool? ?? false;
+        final isScholarVerified = data['isScholarVerified'] as bool? ?? false;
+        final scholarVerificationSubmitted = data['scholarVerificationSubmitted'] as bool? ?? false;
 
         UserAccountType accountType;
         if (role == 'artist') {
           accountType = isVerified ? UserAccountType.artistVerified : UserAccountType.artistPending;
+        } else if (scholarVerificationSubmitted || isScholarVerified) {
+          accountType = isScholarVerified ? UserAccountType.scholarVerified : UserAccountType.scholarPending;
         } else {
           accountType = UserAccountType.buyer;
         }
@@ -96,6 +100,8 @@ class AdminRepository {
           status: data['status'] as String? ?? 'Active',
           activityLog: List<String>.from(data['activityLog'] as List? ?? []),
           isVerified: isVerified,
+          isScholarVerified: isScholarVerified,
+          scholarVerificationSubmitted: scholarVerificationSubmitted,
           totalPurchases: (data['totalPurchases'] as num?)?.toInt() ?? 0,
           totalListings: (data['totalListings'] as num?)?.toInt() ?? 0,
         );
@@ -112,10 +118,14 @@ class AdminRepository {
       final data = doc.data()!;
       final role = data['role'] as String?;
       final isVerified = data['isVerified'] as bool? ?? false;
+      final isScholarVerified = data['isScholarVerified'] as bool? ?? false;
+      final scholarVerificationSubmitted = data['scholarVerificationSubmitted'] as bool? ?? false;
 
       UserAccountType accountType;
       if (role == 'artist') {
         accountType = isVerified ? UserAccountType.artistVerified : UserAccountType.artistPending;
+      } else if (scholarVerificationSubmitted || isScholarVerified) {
+        accountType = isScholarVerified ? UserAccountType.scholarVerified : UserAccountType.scholarPending;
       } else {
         accountType = UserAccountType.buyer;
       }
@@ -129,6 +139,8 @@ class AdminRepository {
         status: data['status'] as String? ?? 'Active',
         activityLog: List<String>.from(data['activityLog'] as List? ?? []),
         isVerified: isVerified,
+        isScholarVerified: isScholarVerified,
+        scholarVerificationSubmitted: scholarVerificationSubmitted,
         totalPurchases: (data['totalPurchases'] as num?)?.toInt() ?? 0,
         totalListings: (data['totalListings'] as num?)?.toInt() ?? 0,
       );
@@ -212,6 +224,50 @@ class AdminRepository {
       'status': 'rejected',
       'rejectionReason': rejectionReason,
       'rejectedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  // ============ SCHOLAR VERIFICATION ============
+  /// Stream of pending scholar verification applications
+  Stream<List<ScholarVerificationApplication>> getPendingScholarApplications() {
+    return _firestore
+        .collection('users')
+        .where('scholarVerificationSubmitted', isEqualTo: true)
+        .where('isScholarVerified', isEqualTo: false)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return ScholarVerificationApplication(
+          userId: doc.id,
+          displayName: data['displayName'] as String? ?? 'Unknown',
+          email: data['email'] as String? ?? '',
+          schoolIdUrl: data['schoolIdUrl'] as String? ?? '',
+          submittedDate: (data['scholarSubmittedAt'] as Timestamp?)?.toDate() ??
+              (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          status: ApplicationStatus.pending,
+          rejectionReason: data['scholarRejectionReason'] as String? ?? '',
+        );
+      }).toList();
+    });
+  }
+
+  /// Approve scholar verification application
+  Future<void> approveScholarApplication(String userId) async {
+    await _firestore.collection('users').doc(userId).update({
+      'isScholarVerified': true,
+      'scholarVerificationSubmitted': false,
+      'scholarVerifiedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Reject scholar verification application
+  Future<void> rejectScholarApplication(String userId, String rejectionReason) async {
+    await _firestore.collection('users').doc(userId).update({
+      'isScholarVerified': false,
+      'scholarVerificationSubmitted': false,
+      'scholarRejectionReason': rejectionReason,
+      'scholarRejectedAt': FieldValue.serverTimestamp(),
     });
   }
 

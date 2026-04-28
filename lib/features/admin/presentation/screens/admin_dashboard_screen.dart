@@ -4,6 +4,7 @@ import '../../domain/models/admin_models.dart';
 import '../widgets/admin_widgets.dart';
 import 'user_management_screen.dart';
 import 'artist_verification_screen.dart';
+import 'scholar_verification_screen.dart';
 import 'artwork_moderation_screen.dart';
 import 'transaction_monitoring_screen.dart';
 import 'dispute_management_screen.dart';
@@ -27,7 +28,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: 9, vsync: this);
   }
 
   @override
@@ -54,6 +55,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
               Tab(text: '📊 Dashboard'),
               Tab(text: '👥 Users'),
               Tab(text: '🎨 Artist Verify'),
+              Tab(text: '🎓 Scholar Verify'),
               Tab(text: '🖼️ Moderation'),
               Tab(text: '💰 Transactions'),
               Tab(text: '⚖️ Disputes'),
@@ -69,6 +71,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           _buildDashboardTab(),
           const UserManagementScreen(),
           const ArtistVerificationScreen(),
+          const ScholarVerificationScreen(),
           const ArtworkModerationScreen(),
           const TransactionMonitoringScreen(),
           const DisputeManagementScreen(),

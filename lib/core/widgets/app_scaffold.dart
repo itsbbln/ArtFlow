@@ -20,6 +20,9 @@ class AppScaffold extends StatelessWidget {
   ];
 
   int _selectedIndex() {
+    if (location.startsWith('/admin')) {
+      return 0;
+    }
     if (location.startsWith('/explore')) {
       return 1;
     }
@@ -163,14 +166,6 @@ class AppScaffold extends StatelessWidget {
                   },
                 ),
                 _MenuTile(
-                  icon: Icons.request_page_outlined,
-                  title: 'Commissions',
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    context.go('/commissions');
-                  },
-                ),
-                _MenuTile(
                   icon: Icons.account_balance_wallet_outlined,
                   title: 'Payments',
                   subtitle: 'Coming soon',
@@ -198,25 +193,86 @@ class AppScaffold extends StatelessWidget {
                       context.go('/admin');
                     },
                   ),
-                if (auth.isArtist)
+                // Admin-specific menu items
+                if (auth.isAdmin) ...[
+                  const SizedBox(height: 10),
+                  const Divider(height: 1),
+                  const SizedBox(height: 10),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 12, bottom: 8),
+                    child: Text(
+                      'ADMIN PANEL',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black54,
+                          ),
+                    ),
+                  ),
                   _MenuTile(
-                    icon: Icons.verified_outlined,
-                    title: auth.isVerifiedArtist
-                        ? 'Verified Artist'
-                        : 'Get Verified Badge',
-                    subtitle: auth.isVerifiedArtist ? null : 'PHP 150 one-time',
+                    icon: Icons.dashboard_outlined,
+                    title: 'Dashboard',
                     onTap: () {
                       Navigator.of(context).pop();
-                      if (!auth.isVerifiedArtist) {
-                        auth.setVerifiedArtist(true);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Verified badge enabled (mock).'),
-                          ),
-                        );
-                      }
+                      context.go('/admin');
                     },
                   ),
+                  _MenuTile(
+                    icon: Icons.people_outline,
+                    title: 'Manage Users',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.go('/admin');
+                    },
+                  ),
+                  _MenuTile(
+                    icon: Icons.verified_user_outlined,
+                    title: 'Artist Verification',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.go('/admin');
+                    },
+                  ),
+                  _MenuTile(
+                    icon: Icons.image_search_outlined,
+                    title: 'Moderation',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.go('/admin');
+                    },
+                  ),
+                  _MenuTile(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Transactions',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.go('/admin');
+                    },
+                  ),
+                  _MenuTile(
+                    icon: Icons.currency_exchange_outlined,
+                    title: 'Revenue',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.go('/admin');
+                    },
+                  ),
+                  _MenuTile(
+                    icon: Icons.analytics_outlined,
+                    title: 'Analytics',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.go('/admin');
+                    },
+                  ),
+                  _MenuTile(
+                    icon: Icons.settings_outlined,
+                    title: 'Settings',
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      context.go('/admin');
+                    },
+                  ),
+                ],
                 const SizedBox(height: 10),
                 const Divider(height: 1),
                 const SizedBox(height: 10),
@@ -340,36 +396,55 @@ class AppScaffold extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    _BottomItem(
-                      icon: Icons.home_outlined,
-                      label: 'Home',
-                      active: _selectedIndex() == 0,
-                      onTap: () => context.go(_tabs[0]),
-                    ),
-                    _BottomItem(
-                      icon: Icons.search,
-                      label: 'Explore',
-                      active: _selectedIndex() == 1,
-                      onTap: () => context.go(_tabs[1]),
-                    ),
-                    _BottomItem(
-                      icon: Icons.add_box_outlined,
-                      label: 'Upload',
-                      active: _selectedIndex() == 2,
-                      onTap: () => context.go(_tabs[2]),
-                    ),
-                    _BottomItem(
-                      icon: Icons.chat_bubble_outline,
-                      label: 'Chat',
-                      active: _selectedIndex() == 3,
-                      onTap: () => context.go(_tabs[3]),
-                    ),
-                    _BottomItem(
-                      icon: Icons.person_outline,
-                      label: 'Profile',
-                      active: _selectedIndex() == 4,
-                      onTap: () => context.go(_tabs[4]),
-                    ),
+                    if (auth.isAdmin) ...[
+                      // Admin navigation: Dashboard + Profile
+                      _BottomItem(
+                        icon: Icons.dashboard_outlined,
+                        label: 'Dashboard',
+                        active: _selectedIndex() == 0,
+                        onTap: () => context.go('/admin'),
+                      ),
+                      _BottomItem(
+                        icon: Icons.person_outline,
+                        label: 'Profile',
+                        active: _selectedIndex() == 4,
+                        onTap: () => context.go(_tabs[4]),
+                      ),
+                    ] else ...[
+                      // Regular user navigation
+                      _BottomItem(
+                        icon: Icons.home_outlined,
+                        label: 'Home',
+                        active: _selectedIndex() == 0,
+                        onTap: () => context.go(_tabs[0]),
+                      ),
+                      _BottomItem(
+                        icon: Icons.search,
+                        label: 'Explore',
+                        active: _selectedIndex() == 1,
+                        onTap: () => context.go(_tabs[1]),
+                      ),
+                      // Upload only for artists
+                      if (auth.isArtist)
+                        _BottomItem(
+                          icon: Icons.add_box_outlined,
+                          label: 'Upload',
+                          active: _selectedIndex() == 2,
+                          onTap: () => context.go(_tabs[2]),
+                        ),
+                      _BottomItem(
+                        icon: Icons.chat_bubble_outline,
+                        label: 'Chat',
+                        active: _selectedIndex() == 3,
+                        onTap: () => context.go(_tabs[3]),
+                      ),
+                      _BottomItem(
+                        icon: Icons.person_outline,
+                        label: 'Profile',
+                        active: _selectedIndex() == 4,
+                        onTap: () => context.go(_tabs[4]),
+                      ),
+                    ],
                   ],
                 ),
               ),

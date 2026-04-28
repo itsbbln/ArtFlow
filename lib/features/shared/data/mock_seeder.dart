@@ -108,6 +108,13 @@ class MockSeeder {
 
   static final notifications = <NotificationItem>[
     NotificationItem(
+      id: 'N0',
+      title: '🔔 Pending Verifications',
+      body: '2 artists awaiting verification. Review in the Admin Panel.',
+      createdAt: DateTime(2026, 4, 15, 14, 45),
+      read: false,
+    ),
+    NotificationItem(
       id: 'N1',
       title: 'Commission update',
       body: 'Family portrait moved to sketch phase.',

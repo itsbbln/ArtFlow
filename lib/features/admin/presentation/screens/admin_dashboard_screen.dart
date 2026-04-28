@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../../data/repositories/admin_repository.dart';
 import '../../domain/models/admin_models.dart';
 import '../widgets/admin_widgets.dart';
@@ -10,6 +9,7 @@ import 'transaction_monitoring_screen.dart';
 import 'dispute_management_screen.dart';
 import 'analytics_screen.dart';
 import 'platform_settings_screen.dart';
+import '../../../shared/data/mock_seeder.dart';
 
 /// Main Admin Dashboard Screen
 class AdminDashboardScreen extends StatefulWidget {
@@ -100,6 +100,58 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Pending verifications alert
+              FutureBuilder<int>(
+                future: _adminRepository.getPendingArtistApplicationsCount(),
+                builder: (context, pendingSnapshot) {
+                  if (pendingSnapshot.hasData && pendingSnapshot.data! > 0) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _showPendingVerificationNotification(pendingSnapshot.data!);
+                    });
+                    
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.orange.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.notification_important, color: Colors.orange, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '⚠️ ${pendingSnapshot.data} Pending Artist Application${pendingSnapshot.data! > 1 ? 's' : ''}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const Text(
+                                  'Artists waiting for verification',
+                                  style: TextStyle(fontSize: 12, color: Colors.black54),
+                                ),
+                              ],
+                            ),
+                          ),
+                          FilledButton.tonal(
+                            onPressed: () => _tabController.animateTo(2),
+                            child: const Text('Review', style: TextStyle(fontSize: 12)),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
               // Main metrics grid
               GridView.count(
                 crossAxisCount: 2,
@@ -228,6 +280,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
           ),
         );
       },
+    );
+  }
+
+  /// Show notification when there are pending verifications
+  void _showPendingVerificationNotification(int pendingCount) {
+    // Add admin notification
+    MockSeeder.addNotification(
+      '🔔 Pending Verifications',
+      '$pendingCount artists/users awaiting verification. Review in the Artist Verification tab.',
     );
   }
 }

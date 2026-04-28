@@ -99,7 +99,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
-  bool _isLogin = false;
+  bool _isLogin = true;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
@@ -109,8 +109,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.initState();
     // Check if mode is passed in query params
     final uri = Uri.base;
-    if (uri.queryParameters['mode'] == 'login') {
-      _isLogin = true;
+    if (uri.queryParameters['mode'] == 'register') {
+      _isLogin = false;
     }
   }
 
@@ -2723,321 +2723,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _StatColumn(label: 'ARTWORKS', value: '${works.length}'),
-                  _StatColumn(label: 'SALES', value: '$salesCount'),
-                  _StatColumn(
-                    label: 'RATING',
-                    value: averageRating == 0 ? '-' : averageRating.toStringAsFixed(1),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              
-              // Artist Verification Section
-              if (!auth.isVerified && auth.role != UserRole.admin)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.1)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.palette_outlined, color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Artist Verification',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                          ),
-                          if (auth.verificationSubmitted) ...[
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Pending',
-                                style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        auth.verificationSubmitted
-                            ? 'Your artist application is being reviewed. You will be notified once approved.'
-                            : 'Become a verified artist to showcase your work and receive commissions.',
-                        style: const TextStyle(fontSize: 12, color: Colors.black54),
-                      ),
-                      if (!auth.verificationSubmitted) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () => context.push('/become-artist'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Text('Apply for Artist Verification'),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-
-              // Scholar Tier Section
-              if (!auth.isScholarVerified)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFB71B1B).withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFB71B1B).withOpacity(0.1)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.school_outlined, color: Color(0xFFB71B1B)),
-                          const SizedBox(width: 10),
-                          Text(
-                            'Scholar Tier',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFB71B1B),
-                                ),
-                          ),
-                          if (auth.scholarVerificationSubmitted) ...[
-                            const Spacer(),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Pending',
-                                style: TextStyle(color: Colors.orange, fontSize: 10, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        auth.scholarVerificationSubmitted
-                            ? 'Your scholar application is being reviewed. You will be notified once approved.'
-                            : 'Students get exclusive benefits and discounts. Apply now with your School ID.',
-                        style: const TextStyle(fontSize: 12, color: Colors.black54),
-                      ),
-                      if (!auth.scholarVerificationSubmitted) ...[
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () => context.push('/scholar-verification'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFB71B1B),
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            child: const Text('Apply for Scholar Benefits'),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              
-              if (auth.isScholarVerified)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.green.withOpacity(0.1)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.verified_user, color: Colors.green),
-                      const SizedBox(width: 10),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Verified Scholar',
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                          ),
-                          const Text(
-                            'You are enjoying student benefits!',
-                            style: TextStyle(fontSize: 12, color: Colors.black54),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              
-              const SizedBox(height: 16),
+              // Action Buttons Section
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: () => context.push('/orders'),
-                      icon: const Icon(Icons.inventory_2_outlined, size: 18),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
+                      icon: const Icon(Icons.shopping_bag_outlined),
                       label: const Text('Orders'),
                     ),
                   ),
                   const SizedBox(width: 12),
-                  if (auth.isAdmin)
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => context.push('/admin'),
-                        icon: const Icon(Icons.settings_outlined, size: 18),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        label: const Text('Admin'),
-                      ),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => context.push('/payments'),
+                      icon: const Icon(Icons.payment_outlined),
+                      label: const Text('Payments'),
                     ),
+                  ),
                 ],
               ),
+              const SizedBox(height: 12),
+              // Show "Become an Artist" button if user is not already an artist
+              if (!auth.isArtist)
+                FilledButton.icon(
+                  onPressed: () => context.push('/become-artist'),
+                  icon: const Icon(Icons.brush_outlined),
+                  label: const Text('Become an Artist'),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                )
+              else
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/admin'),
+                  icon: const Icon(Icons.admin_panel_settings_outlined),
+                  label: const Text('Admin Panel'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
               const SizedBox(height: 16),
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: _showArtworks
-                    ? FilledButton(
-                        onPressed: () => setState(() => _showArtworks = true),
-                        child: const Text('Artworks'),
-                      )
-                    : OutlinedButton(
-                        onPressed: () => setState(() => _showArtworks = true),
-                        child: const Text('Artworks'),
-                      ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: !_showArtworks
-                    ? FilledButton(
-                        onPressed: () => setState(() => _showArtworks = false),
-                        child: const Text('Commissions'),
-                      )
-                    : OutlinedButton(
-                        onPressed: () => setState(() => _showArtworks = false),
-                        child: const Text('Commissions'),
-                      ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-
-if (_showArtworks) ...[
-  if (works.isEmpty)
-    const _ProfileEmptyState(
-      title: 'No artworks yet',
-      subtitle: 'Upload your first artwork to get started',
-      cta: 'Upload Artwork',
-      icon: Icons.palette_outlined,
-      route: '/create',
-    )
-  else
-    ...works.map((item) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: Column(
-            children: [
-              ArtworkCard(
-                artwork: item,
-                onTap: () => context.push('/artwork/${item.id}'),
-              ),
-              const SizedBox(height: 6),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () => context.push('/create/${item.id}'),
-                      icon: const Icon(Icons.edit_outlined),
-                      label: const Text('Edit'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        setState(() {
-                          MockSeeder.deleteArtwork(item.id);
-                        });
-                      },
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Delete'),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        )),
-],
-        if (!_showArtworks) ...[
-          if (commissions.isEmpty)
-            const _ProfileEmptyState(
-              title: 'No commissions yet',
-              subtitle: 'Commission requests will appear here.',
-              cta: 'Explore',
-              icon: Icons.request_page_outlined,
-              route: '/explore',
-            )
-          else
-            ...commissions.map((item) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ListTile(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    tileColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                    title: Text(item.title),
-                    subtitle: Text('Budget ₱${item.budget.toStringAsFixed(0)}'),
-                    trailing: _statusChip(item.status),
-                  ),
-                )),
-        ],
       ],
     );
   }

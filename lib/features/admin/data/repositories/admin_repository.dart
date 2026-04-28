@@ -58,6 +58,19 @@ class AdminRepository {
     }
   }
 
+  /// Get count of pending artist applications
+  Future<int> getPendingArtistApplicationsCount() async {
+    try {
+      final snapshot = await _firestore
+          .collection('artistApplications')
+          .where('status', isEqualTo: 'pending')
+          .get();
+      return snapshot.docs.length;
+    } catch (e) {
+      return 0;
+    }
+  }
+
   // ============ USER MANAGEMENT ============
   /// Stream of all users for admin viewing
   Stream<List<AdminUserInfo>> getAllUsers() {

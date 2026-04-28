@@ -10,7 +10,7 @@ import '../../features/screens/scholar_verification_screen.dart';
 
 GoRouter createRouter(AuthState authState) {
   return GoRouter(
-    initialLocation: '/splash',
+    initialLocation: '/register',
     refreshListenable: authState,
     redirect: (context, state) {
       final path = state.uri.path;
@@ -24,19 +24,13 @@ GoRouter createRouter(AuthState authState) {
       };
 
       if (authState.status == AuthStatus.checking && 
-          path != '/splash' && 
           path != '/register' && 
+          path != '/splash' && 
           path != '/welcome') {
-        return '/splash';
+        return '/register';
       }
 
       if (authState.status == AuthStatus.unauthenticated) {
-        if (path == '/splash') {
-          return '/welcome';
-        }
-        if (!authState.welcomeCompleted && path != '/welcome') {
-          return '/welcome';
-        }
         if (!authPaths.contains(path)) {
           return '/register';
         }

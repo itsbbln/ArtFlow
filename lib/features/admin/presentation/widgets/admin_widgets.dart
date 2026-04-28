@@ -71,11 +71,35 @@ class AdminUserListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = status == 'Active' ? Colors.green : Colors.red;
+    final isPendingArtist = accountType.contains('Pending');
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8),
+      color: isPendingArtist ? Colors.orange.withOpacity(0.05) : null,
       child: ListTile(
-        title: Text(displayName),
+        title: Row(
+          children: [
+            Expanded(child: Text(displayName)),
+            if (isPendingArtist) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text(
+                  'Needs Verification',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
         subtitle: Text(email),
         trailing: PopupMenuButton(
           itemBuilder: (context) => [

@@ -195,7 +195,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordController.text,
       );
       if (mounted && auth.isAuthenticated) {
-        context.go('/verification');
+        context.go('/');
       }
     }
   }
@@ -439,7 +439,6 @@ class VerificationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
-    final isArtist = auth.role == UserRole.artist;
 
     return Scaffold(
       body: Container(
@@ -467,7 +466,7 @@ class VerificationPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 Text(
-                  'Account Under Review',
+                  'Application Under Review',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -475,9 +474,7 @@ class VerificationPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  isArtist
-                      ? 'Your artist application has been submitted. Our team is currently reviewing your profile and sample artworks. This usually takes 24-48 hours.'
-                      : 'Thank you for registering! Your account is currently being verified by our administrators. You will have limited access until the process is complete.',
+                  'Your artist application has been submitted. Our team is currently reviewing your profile and sample artworks. This usually takes 24-48 hours.',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: Colors.black54,
                       ),
@@ -496,7 +493,7 @@ class VerificationPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: const Text('Continue with Limited Access'),
+                    child: const Text('Return to Home'),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -2744,8 +2741,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              // Show "Become an Artist" button if user is not already an artist
-              if (!auth.isArtist)
+              // Artist Application Logic
+              if (!auth.isArtist && !auth.verificationSubmitted)
                 FilledButton.icon(
                   onPressed: () => context.push('/become-artist'),
                   icon: const Icon(Icons.brush_outlined),
@@ -2754,7 +2751,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     minimumSize: const Size(double.infinity, 48),
                   ),
                 )
-              else
+              else if (auth.verificationSubmitted && !auth.isVerified)
+                OutlinedButton.icon(
+                  onPressed: () => context.push('/verification'),
+                  icon: const Icon(Icons.pending_actions_rounded),
+                  label: const Text('Application Pending'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 48),
+                    foregroundColor: const Color(0xFFB71B1B),
+                    side: const BorderSide(color: Color(0xFFB71B1B)),
+                  ),
+                )
+              else if (auth.isAdmin)
                 OutlinedButton.icon(
                   onPressed: () => context.push('/admin'),
                   icon: const Icon(Icons.admin_panel_settings_outlined),

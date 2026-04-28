@@ -43,62 +43,6 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
 
-    if (!auth.isVerified && !auth.isAdmin) {
-      return Scaffold(
-        body: Stack(
-          children: [
-            child,
-            if (location != '/verification')
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: SafeArea(
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    color: const Color(0xFFB71B1B),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline,
-                            color: Colors.white, size: 20),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            'Account pending verification. Limited access.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: () => context.go('/verification'),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Text(
-                            'View Details',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              decoration: TextDecoration.underline,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
       endDrawer: Drawer(
         child: Container(
@@ -291,165 +235,211 @@ class AppScaffold extends StatelessWidget {
           ),
         ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          SafeArea(
-            bottom: false,
-            child: Container(
-              height: 56,
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              decoration: BoxDecoration(
-                color: Theme.of(
-                  context,
-                ).scaffoldBackgroundColor.withValues(alpha: 0.92),
-                border: const Border(
-                  bottom: BorderSide(color: Color(0x1A000000)),
-                ),
-              ),
-              child: Row(
-                children: [
-                  InkWell(
-                    onTap: () => context.go('/'),
-                    borderRadius: BorderRadius.circular(12),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: Image.asset(
-                              'assets/images/artflow_logo.png',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'ArtFlow',
-                          style: Theme.of(context).textTheme.titleLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                      ],
+          Column(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: Container(
+                  height: 56,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    color: Theme.of(
+                      context,
+                    ).scaffoldBackgroundColor.withValues(alpha: 0.92),
+                    border: const Border(
+                      bottom: BorderSide(color: Color(0x1A000000)),
                     ),
                   ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => context.push('/search'),
-                    icon: const Icon(Icons.search, size: 20),
-                  ),
-                  Stack(
+                  child: Row(
                     children: [
-                      IconButton(
-                        onPressed: () => context.push('/notifications'),
-                        icon: const Icon(Icons.notifications_none, size: 20),
-                      ),
-                      if (MockSeeder.unreadNotificationCount > 0)
-                        Positioned(
-                          right: 8,
-                          top: 8,
-                          child: Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Center(
-                              child: Text(
-                                '${MockSeeder.unreadNotificationCount}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w700,
+                      InkWell(
+                        onTap: () => context.go('/'),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Row(
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: SizedBox(
+                                width: 36,
+                                height: 36,
+                                child: Image.asset(
+                                  'assets/images/artflow_logo.png',
+                                  fit: BoxFit.cover,
                                 ),
                               ),
                             ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'ArtFlow',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => context.push('/search'),
+                        icon: const Icon(Icons.search, size: 20),
+                      ),
+                      Stack(
+                        children: [
+                          IconButton(
+                            onPressed: () => context.push('/notifications'),
+                            icon: const Icon(Icons.notifications_none, size: 20),
                           ),
-                        ),
+                          if (MockSeeder.unreadNotificationCount > 0)
+                            Positioned(
+                              right: 8,
+                              top: 8,
+                              child: Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(99),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${MockSeeder.unreadNotificationCount}',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      Builder(
+                        builder: (context) {
+                          return IconButton(
+                            onPressed: () => Scaffold.of(context).openEndDrawer(),
+                            icon: const Icon(Icons.menu_rounded, size: 22),
+                          );
+                        },
+                      ),
                     ],
                   ),
-                  Builder(
-                    builder: (context) {
-                      return IconButton(
-                        onPressed: () => Scaffold.of(context).openEndDrawer(),
-                        icon: const Icon(Icons.menu_rounded, size: 22),
-                      );
-                    },
-                  ),
-                ],
+                ),
               ),
-            ),
+              Expanded(child: SafeArea(top: false, child: child)),
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(
+                    context,
+                  ).scaffoldBackgroundColor.withValues(alpha: 0.95),
+                  border: const Border(top: BorderSide(color: Color(0x1A000000))),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        if (auth.isAdmin) ...[
+                          // Admin navigation: Dashboard + Profile
+                          _BottomItem(
+                            icon: Icons.dashboard_outlined,
+                            label: 'Dashboard',
+                            active: _selectedIndex() == 0,
+                            onTap: () => context.go('/admin'),
+                          ),
+                          _BottomItem(
+                            icon: Icons.person_outline,
+                            label: 'Profile',
+                            active: _selectedIndex() == 4,
+                            onTap: () => context.go(_tabs[4]),
+                          ),
+                        ] else ...[
+                          // Regular user navigation
+                          _BottomItem(
+                            icon: Icons.home_outlined,
+                            label: 'Home',
+                            active: _selectedIndex() == 0,
+                            onTap: () => context.go(_tabs[0]),
+                          ),
+                          _BottomItem(
+                            icon: Icons.search,
+                            label: 'Explore',
+                            active: _selectedIndex() == 1,
+                            onTap: () => context.go(_tabs[1]),
+                          ),
+                          // Upload only for artists
+                          if (auth.isArtist)
+                            _BottomItem(
+                              icon: Icons.add_box_outlined,
+                              label: 'Upload',
+                              active: _selectedIndex() == 2,
+                              onTap: () => context.go(_tabs[2]),
+                            ),
+                          _BottomItem(
+                            icon: Icons.chat_bubble_outline,
+                            label: 'Chat',
+                            active: _selectedIndex() == 3,
+                            onTap: () => context.go(_tabs[3]),
+                          ),
+                          _BottomItem(
+                            icon: Icons.person_outline,
+                            label: 'Profile',
+                            active: _selectedIndex() == 4,
+                            onTap: () => context.go(_tabs[4]),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          Expanded(child: SafeArea(top: false, child: child)),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).scaffoldBackgroundColor.withValues(alpha: 0.95),
-              border: const Border(top: BorderSide(color: Color(0x1A000000))),
-            ),
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          if (auth.verificationSubmitted && !auth.isVerified && location != '/verification')
+            Positioned(
+              top: 56 + MediaQuery.of(context).padding.top,
+              left: 0,
+              right: 0,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: const Color(0xFFB71B1B),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    if (auth.isAdmin) ...[
-                      // Admin navigation: Dashboard + Profile
-                      _BottomItem(
-                        icon: Icons.dashboard_outlined,
-                        label: 'Dashboard',
-                        active: _selectedIndex() == 0,
-                        onTap: () => context.go('/admin'),
-                      ),
-                      _BottomItem(
-                        icon: Icons.person_outline,
-                        label: 'Profile',
-                        active: _selectedIndex() == 4,
-                        onTap: () => context.go(_tabs[4]),
-                      ),
-                    ] else ...[
-                      // Regular user navigation
-                      _BottomItem(
-                        icon: Icons.home_outlined,
-                        label: 'Home',
-                        active: _selectedIndex() == 0,
-                        onTap: () => context.go(_tabs[0]),
-                      ),
-                      _BottomItem(
-                        icon: Icons.search,
-                        label: 'Explore',
-                        active: _selectedIndex() == 1,
-                        onTap: () => context.go(_tabs[1]),
-                      ),
-                      // Upload only for artists
-                      if (auth.isArtist)
-                        _BottomItem(
-                          icon: Icons.add_box_outlined,
-                          label: 'Upload',
-                          active: _selectedIndex() == 2,
-                          onTap: () => context.go(_tabs[2]),
+                    const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        'Artist application pending review.',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
-                      _BottomItem(
-                        icon: Icons.chat_bubble_outline,
-                        label: 'Chat',
-                        active: _selectedIndex() == 3,
-                        onTap: () => context.go(_tabs[3]),
                       ),
-                      _BottomItem(
-                        icon: Icons.person_outline,
-                        label: 'Profile',
-                        active: _selectedIndex() == 4,
-                        onTap: () => context.go(_tabs[4]),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/verification'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                    ],
+                      child: const Text(
+                        'Details',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

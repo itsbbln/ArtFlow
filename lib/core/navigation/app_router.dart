@@ -62,6 +62,10 @@ GoRouter createRouter(AuthState authState) {
         return '/';
       }
 
+      if (path == '/verification' && !authState.verificationSubmitted) {
+        return '/';
+      }
+
       return null;
     },
     routes: [

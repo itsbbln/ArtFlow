@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:math' as math;
 import '../../entities/models/artwork.dart';
 import '../../entities/models/commission.dart';
 import '../../entities/models/message_item.dart';
@@ -37,6 +39,7 @@ class MockSeeder {
       images: [placeholder],
       isFeatured: true,
       avgRating: 4.8,
+      status: 'For Sale',
     ),
     Artwork(
       id: '2',
@@ -50,6 +53,7 @@ class MockSeeder {
       imageUrl: placeholder,
       images: [placeholder],
       avgRating: 4.5,
+      status: 'For Sale',
     ),
     Artwork(
       id: '3',
@@ -63,6 +67,7 @@ class MockSeeder {
       imageUrl: placeholder,
       images: [placeholder],
       avgRating: 4.9,
+      status: 'Reserved',
     ),
     Artwork(
       id: '4',
@@ -76,6 +81,49 @@ class MockSeeder {
       imageUrl: placeholder,
       images: [placeholder],
       avgRating: 4.2,
+      status: 'Sold',
+    ),
+    Artwork(
+      id: '5',
+      title: 'Neon Samurai',
+      artistName: 'Guest Artist',
+      price: 5000,
+      category: 'digital',
+      description: 'Cyberpunk inspired digital painting.',
+      medium: 'Digital',
+      size: '2000x3000 px',
+      imageUrl: placeholder,
+      images: [placeholder],
+      isAuction: true,
+      startingPrice: 4500,
+      highestBid: 4800,
+      bidCount: 3,
+      auctionEndTime: DateTime.now().add(const Duration(days: 2)),
+      bidHistory: [
+        Bid(bidderName: 'User_A', amount: 4600, timestamp: DateTime.now().subtract(const Duration(hours: 5))),
+        Bid(bidderName: 'User_B', amount: 4700, timestamp: DateTime.now().subtract(const Duration(hours: 2))),
+        Bid(bidderName: 'User_C', amount: 4800, timestamp: DateTime.now().subtract(const Duration(minutes: 45))),
+      ],
+    ),
+    Artwork(
+      id: '6',
+      title: 'Rustic Charm',
+      artistName: 'Guest Artist',
+      price: 3500,
+      category: 'painting',
+      description: 'Traditional landscape of a provincial farmhouse.',
+      medium: 'Watercolor',
+      size: '12x16 in',
+      imageUrl: placeholder,
+      images: [placeholder],
+      isAuction: true,
+      startingPrice: 3000,
+      highestBid: 3200,
+      bidCount: 1,
+      auctionEndTime: DateTime.now().add(const Duration(hours: 12)),
+      bidHistory: [
+        Bid(bidderName: 'Collector_X', amount: 3200, timestamp: DateTime.now().subtract(const Duration(hours: 1))),
+      ],
     ),
   ];
 
@@ -222,6 +270,9 @@ class MockSeeder {
   static int get totalViews =>
       analyticsViews.values.fold(0, (sum, value) => sum + value);
 
+  static final _artworkUpdateController = StreamController<Artwork>.broadcast();
+  static Stream<Artwork> get artworkUpdates => _artworkUpdateController.stream;
+
   static void trackView(String artworkId) {
     analyticsViews[artworkId] = (analyticsViews[artworkId] ?? 0) + 1;
   }
@@ -342,6 +393,35 @@ class MockSeeder {
 
   static bool isSold(String artworkId) => soldArtworkIds.contains(artworkId);
 
+  static void placeBid(String artworkId, double amount, String bidderName) {
+    final index = artworks.indexWhere((item) => item.id == artworkId);
+    if (index < 0) return;
+    final current = artworks[index];
+    
+    // Create new bid history entry
+    final newBid = Bid(
+      bidderName: bidderName,
+      amount: amount,
+      timestamp: DateTime.now(),
+    );
+    
+    // Create updated artwork with new bid and history
+    final updated = current.copyWith(
+      highestBid: amount,
+      bidCount: current.bidCount + 1,
+      bidHistory: [...current.bidHistory, newBid],
+    );
+    
+    artworks[index] = updated;
+    _artworkUpdateController.add(updated);
+    
+    // Add notification for the artist
+    addNotification(
+      'New Bid Placed',
+      '$bidderName placed a bid of PHP ${amount.toStringAsFixed(0)} on "${current.title}".',
+    );
+  }
+
   static void addCommission({
     required String title,
     required String brief,
@@ -395,5 +475,33 @@ class MockSeeder {
     }
     final total = reviews.fold<int>(0, (sum, item) => sum + item.rating);
     return total / reviews.length;
+  }
+
+  // --- Auction Simulation ---
+  static Timer? _globalAuctionTimer;
+  
+  static void startGlobalAuctionSimulation() {
+    if (_globalAuctionTimer != null) return;
+    
+    _globalAuctionTimer = Timer.periodic(const Duration(seconds: 45), (timer) {
+      final auctionArtworks = artworks.where((a) => a.isAuction && (a.auctionEndTime?.isAfter(DateTime.now()) ?? false)).toList();
+      if (auctionArtworks.isEmpty) return;
+      
+      final random = math.Random();
+      // 30% chance to place a bid on a random auction artwork
+      if (random.nextDouble() < 0.3) {
+        final artwork = auctionArtworks[random.nextInt(auctionArtworks.length)];
+        final currentBid = artwork.highestBid ?? artwork.startingPrice ?? artwork.price;
+        final increment = (random.nextInt(5) + 1) * 100.0;
+        final newBid = currentBid + increment;
+        
+        placeBid(artwork.id, newBid, 'Collector_${random.nextInt(1000)}');
+      }
+    });
+  }
+  
+  static void stopGlobalAuctionSimulation() {
+    _globalAuctionTimer?.cancel();
+    _globalAuctionTimer = null;
   }
 }

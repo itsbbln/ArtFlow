@@ -212,11 +212,48 @@ class AdminRepository {
 
   /// Approve artist application
   Future<void> approveArtistApplication(String applicationId, String userId) async {
-    await _firestore.collection('users').doc(userId).update({
+    final batch = _firestore.batch();
+
+    // 1. Update user verification status
+    final userRef = _firestore.collection('users').doc(userId);
+    batch.update(userRef, {
       'isVerified': true,
       'verifiedAt': FieldValue.serverTimestamp(),
       'verificationStatus': 'approved',
     });
+
+    // 2. Fetch user data to get sample artworks and profile info
+    final userDoc = await userRef.get();
+    if (userDoc.exists) {
+      final userData = userDoc.data()!;
+      final sampleArtworks = List<String>.from(userData['sampleArtworks'] as List? ?? []);
+      final artistName = userData['penName'] as String? ?? userData['displayName'] as String? ?? 'Unknown Artist';
+      final medium = userData['medium'] as String? ?? 'Various';
+
+      // 3. Create artwork entries for each sample
+      for (final imageUrl in sampleArtworks) {
+        final artworkRef = _firestore.collection('artworks').doc();
+        batch.set(artworkRef, {
+          'id': artworkRef.id,
+          'artistId': userId,
+          'artistName': artistName,
+          'title': 'Sample Work',
+          'description': 'Automatically imported from artist application.',
+          'imageUrl': imageUrl,
+          'images': [imageUrl],
+          'price': 0.0,
+          'category': 'other',
+          'medium': medium,
+          'moderationStatus': 'approved',
+          'uploadedAt': FieldValue.serverTimestamp(),
+          'isFeatured': false,
+          'avgRating': 0.0,
+          'status': 'Gallery', // Default status for portfolio items
+        });
+      }
+    }
+
+    await batch.commit();
   }
 
   /// Reject artist application with feedback

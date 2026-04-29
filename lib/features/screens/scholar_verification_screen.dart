@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:io';
 import '../auth/presentation/auth_state.dart';
 
 class ScholarVerificationScreen extends StatefulWidget {
@@ -14,19 +18,54 @@ class _ScholarVerificationScreenState extends State<ScholarVerificationScreen> {
   bool _agreedToTerms = false;
   bool _isUploading = false;
   String? _uploadedIdUrl;
+  File? _selectedImage;
+  final ImagePicker _picker = ImagePicker();
 
   void _handleUpload() async {
-    setState(() => _isUploading = true);
-    // Mock upload delay
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+
+    if (image != null) {
       setState(() {
-        _isUploading = false;
-        _uploadedIdUrl = 'https://example.com/mock-school-id.jpg';
+        _isUploading = true;
+        _selectedImage = File(image.path);
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('School ID uploaded successfully!')),
-      );
+
+      try {
+        final auth = FirebaseAuth.instance;
+        final storage = FirebaseStorage.instance;
+        final user = auth.currentUser;
+        
+        if (user == null) throw Exception('User not logged in');
+
+        final fileName = 'scholar_ids/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final ref = storage.ref().child(fileName);
+        
+        final uploadTask = await ref.putFile(_selectedImage!);
+        final downloadUrl = await uploadTask.ref.getDownloadURL();
+        
+        if (mounted) {
+          setState(() {
+            _isUploading = false;
+            _uploadedIdUrl = downloadUrl;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('School ID uploaded successfully!')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          setState(() {
+            _isUploading = false;
+            _selectedImage = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
     }
   }
 
@@ -81,7 +120,7 @@ class _ScholarVerificationScreenState extends State<ScholarVerificationScreen> {
           gradient: LinearGradient(
             colors: [
               Theme.of(context).scaffoldBackgroundColor,
-              const Color(0xFFFAEBDC).withOpacity(0.6),
+              const Color(0xFFFAEBDC).withValues(alpha: 0.1),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -182,7 +221,7 @@ class _ScholarVerificationScreenState extends State<ScholarVerificationScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -232,6 +271,16 @@ class _ScholarVerificationScreenState extends State<ScholarVerificationScreen> {
             width: 2,
             style: BorderStyle.solid,
           ),
+          image: _selectedImage != null
+              ? DecorationImage(
+                  image: FileImage(_selectedImage!),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withValues(alpha: 0.1),
+                    BlendMode.darken,
+                  ),
+                )
+              : null,
         ),
         child: _isUploading
             ? const Center(child: CircularProgressIndicator())
@@ -241,8 +290,25 @@ class _ScholarVerificationScreenState extends State<ScholarVerificationScreen> {
                     children: [
                       const Icon(Icons.check_circle, color: Colors.green, size: 48),
                       const SizedBox(height: 12),
-                      const Text('School ID Ready', style: TextStyle(fontWeight: FontWeight.bold)),
-                      TextButton(onPressed: _handleUpload, child: const Text('Change Photo')),
+                      const Text(
+                        'School ID Ready',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: _handleUpload,
+                        child: const Text(
+                          'Change Photo',
+                          style: TextStyle(
+                            color: Colors.white,
+                            decoration: TextDecoration.underline,
+                            shadows: [Shadow(blurRadius: 4, color: Colors.black)],
+                          ),
+                        ),
+                      ),
                     ],
                   )
                 : Column(

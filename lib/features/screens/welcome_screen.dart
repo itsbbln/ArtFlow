@@ -112,9 +112,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             child: TextButton(
               onPressed: () async {
                 await context.read<AuthState>().completeWelcome();
-                if (mounted) {
-                  context.go('/register');
-                }
+                if (!context.mounted) return;
+                context.go('/register');
               },
               child: const Text(
                 'Skip',
@@ -148,7 +147,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         decoration: BoxDecoration(
                           color: _currentIndex == index
                               ? Colors.white
-                              : Colors.white.withOpacity(0.5),
+                              : Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
@@ -183,9 +182,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               : FilledButton(
                                   onPressed: () async {
                                     await context.read<AuthState>().completeWelcome();
-                                    if (mounted) {
-                                      context.go('/register');
-                                    }
+                                    if (!context.mounted) return;
+                                    context.go('/register');
                                   },
                                   child: const Text('Login / Register'),
                                 ),
@@ -206,7 +204,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         gradient: LinearGradient(
           colors: [
             slide.backgroundColor,
-            slide.backgroundColor.withOpacity(0.8),
+            slide.backgroundColor.withValues(alpha: 0.1),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -242,7 +240,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.1),
                   height: 1.5,
                 ),
               ),

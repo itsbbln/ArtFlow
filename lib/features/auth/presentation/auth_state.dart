@@ -21,6 +21,7 @@ class AuthState extends ChangeNotifier {
   String _username = '@guest';
   String _bio = '';
   String _style = '';
+  String _medium = '';
   bool _verifiedArtist = false;
   bool _portfolioPack = false;
   bool _featuredBoost = false;
@@ -37,6 +38,7 @@ class AuthState extends ChangeNotifier {
   String get username => _username;
   String get bio => _bio;
   String get style => _style;
+  String get medium => _medium;
   bool get isVerified => _isVerified;
   bool get verificationSubmitted => _verificationSubmitted;
   bool get isScholarVerified => _isScholarVerified;
@@ -161,6 +163,7 @@ class AuthState extends ChangeNotifier {
         'schoolIdUrl': schoolIdUrl,
         'scholarVerificationSubmitted': true,
         'isScholarVerified': false,
+        'scholarSubmittedAt': FieldValue.serverTimestamp(),
       });
 
       _scholarVerificationSubmitted = true;
@@ -201,6 +204,7 @@ class AuthState extends ChangeNotifier {
         _scholarVerificationSubmitted = data['scholarVerificationSubmitted'] ?? false;
         _bio = data['bio'] ?? '';
         _style = data['artStyle'] ?? '';
+        _medium = data['medium'] ?? '';
         
         final roleStr = data['role'] ?? 'buyer';
         _role = roleStr == 'admin' ? UserRole.admin : (roleStr == 'artist' ? UserRole.artist : UserRole.buyer);
@@ -234,15 +238,39 @@ class AuthState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateProfile({
+  Future<void> updateProfile({
     required String name,
     required String username,
     required String bio,
-  }) {
-    _displayName = name.trim().isEmpty ? _displayName : name.trim();
-    _username = username.trim().isEmpty ? _username : username.trim();
-    _bio = bio.trim().isEmpty ? _bio : bio.trim();
-    notifyListeners();
+    String? artStyle,
+    String? medium,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final updates = {
+      'displayName': name.trim(),
+      'username': username.trim(),
+      'bio': bio.trim(),
+    };
+
+    if (artStyle != null) updates['artStyle'] = artStyle;
+    if (medium != null) updates['medium'] = medium;
+
+    try {
+      await _service.updateUserProfile(user.uid, updates);
+      
+      _displayName = name.trim().isEmpty ? _displayName : name.trim();
+      _username = username.trim().isEmpty ? _username : username.trim();
+      _bio = bio.trim().isEmpty ? _bio : bio.trim();
+      if (artStyle != null) _style = artStyle;
+      if (medium != null) _medium = medium;
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error updating profile: $e');
+      rethrow;
+    }
   }
 
   void setVerifiedArtist(bool value) {

@@ -141,6 +141,22 @@ GoRouter createRouter(AuthState authState) {
             path: '/commissions',
             builder: (_, _) => const CommissionsScreen(),
           ),
+          GoRoute(
+            path: '/portfolio-management',
+            builder: (_, _) => const PortfolioManagementScreen(),
+          ),
+          GoRoute(
+            path: '/wallet',
+            builder: (_, _) => const WalletScreen(),
+          ),
+          GoRoute(
+            path: '/artist-orders',
+            builder: (_, _) => const ArtistOrdersScreen(),
+          ),
+          GoRoute(
+            path: '/pricing-guidance',
+            builder: (_, _) => const PricingGuidanceScreen(),
+          ),
           GoRoute(path: '/orders', builder: (_, _) => const OrdersScreen()),
           GoRoute(
             path: '/notifications',

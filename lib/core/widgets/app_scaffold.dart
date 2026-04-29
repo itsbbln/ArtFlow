@@ -110,6 +110,14 @@ class AppScaffold extends StatelessWidget {
                   },
                 ),
                 _MenuTile(
+                  icon: Icons.gavel_outlined,
+                  title: 'Auctions',
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    context.go('/auctions');
+                  },
+                ),
+                _MenuTile(
                   icon: Icons.account_balance_wallet_outlined,
                   title: 'Payments',
                   subtitle: 'Coming soon',
@@ -147,9 +155,9 @@ class AppScaffold extends StatelessWidget {
                     child: Text(
                       'ADMIN PANEL',
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black54,
-                          ),
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black54,
+                      ),
                     ),
                   ),
                   _MenuTile(
@@ -288,7 +296,10 @@ class AppScaffold extends StatelessWidget {
                         children: [
                           IconButton(
                             onPressed: () => context.push('/notifications'),
-                            icon: const Icon(Icons.notifications_none, size: 20),
+                            icon: const Icon(
+                              Icons.notifications_none,
+                              size: 20,
+                            ),
                           ),
                           if (MockSeeder.unreadNotificationCount > 0)
                             Positioned(
@@ -318,7 +329,8 @@ class AppScaffold extends StatelessWidget {
                       Builder(
                         builder: (context) {
                           return IconButton(
-                            onPressed: () => Scaffold.of(context).openEndDrawer(),
+                            onPressed: () =>
+                                Scaffold.of(context).openEndDrawer(),
                             icon: const Icon(Icons.menu_rounded, size: 22),
                           );
                         },
@@ -333,12 +345,17 @@ class AppScaffold extends StatelessWidget {
                   color: Theme.of(
                     context,
                   ).scaffoldBackgroundColor.withValues(alpha: 0.95),
-                  border: const Border(top: BorderSide(color: Color(0x1A000000))),
+                  border: const Border(
+                    top: BorderSide(color: Color(0x1A000000)),
+                  ),
                 ),
                 child: SafeArea(
                   top: false,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 6,
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -398,17 +415,26 @@ class AppScaffold extends StatelessWidget {
               ),
             ],
           ),
-          if (auth.verificationSubmitted && !auth.isVerified && location != '/verification')
+          if (auth.verificationSubmitted &&
+              !auth.isVerified &&
+              location != '/verification')
             Positioned(
               top: 56 + MediaQuery.of(context).padding.top,
               left: 0,
               right: 0,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 color: const Color(0xFFB71B1B),
                 child: Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                    const Icon(
+                      Icons.info_outline,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     const Expanded(
                       child: Text(
@@ -472,7 +498,9 @@ class _MenuTile extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         child: ListTile(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           leading: Icon(icon, color: titleColor),
           title: Text(
             title,

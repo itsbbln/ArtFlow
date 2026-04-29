@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import '../../entities/models/artwork.dart';
+import '../../entities/models/auction.dart';
 import '../../entities/models/commission.dart';
 import '../../entities/models/message_item.dart';
 import '../../entities/models/notification_item.dart';
@@ -100,9 +101,21 @@ class MockSeeder {
       bidCount: 3,
       auctionEndTime: DateTime.now().add(const Duration(days: 2)),
       bidHistory: [
-        Bid(bidderName: 'User_A', amount: 4600, timestamp: DateTime.now().subtract(const Duration(hours: 5))),
-        Bid(bidderName: 'User_B', amount: 4700, timestamp: DateTime.now().subtract(const Duration(hours: 2))),
-        Bid(bidderName: 'User_C', amount: 4800, timestamp: DateTime.now().subtract(const Duration(minutes: 45))),
+        Bid(
+          bidderName: 'User_A',
+          amount: 4600,
+          timestamp: DateTime.now().subtract(const Duration(hours: 5)),
+        ),
+        Bid(
+          bidderName: 'User_B',
+          amount: 4700,
+          timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+        ),
+        Bid(
+          bidderName: 'User_C',
+          amount: 4800,
+          timestamp: DateTime.now().subtract(const Duration(minutes: 45)),
+        ),
       ],
     ),
     Artwork(
@@ -122,7 +135,11 @@ class MockSeeder {
       bidCount: 1,
       auctionEndTime: DateTime.now().add(const Duration(hours: 12)),
       bidHistory: [
-        Bid(bidderName: 'Collector_X', amount: 3200, timestamp: DateTime.now().subtract(const Duration(hours: 1))),
+        Bid(
+          bidderName: 'Collector_X',
+          amount: 3200,
+          timestamp: DateTime.now().subtract(const Duration(hours: 1)),
+        ),
       ],
     ),
   ];
@@ -149,9 +166,54 @@ class MockSeeder {
   ];
 
   static final orders = <Order>[
-    Order(id: '900', artworkId: '1', status: 'Delivered', total: 4200),
-    Order(id: '901', artworkId: '3', status: 'Processing', total: 5100),
-    Order(id: '902', artworkId: '4', status: 'Shipped', total: 2900),
+    Order(
+      id: '900',
+      artworkId: '1',
+      status: 'Delivered',
+      total: 4200,
+      paymentStatus: 'confirmed',
+      paymentMethod: 'GCash',
+      reportedAmount: 4200,
+      artistConfirmedPayment: true,
+    ),
+    Order(
+      id: '901',
+      artworkId: '3',
+      status: 'Processing',
+      total: 5100,
+      paymentStatus: 'pending',
+    ),
+    Order(
+      id: '902',
+      artworkId: '4',
+      status: 'Shipped',
+      total: 2900,
+      paymentStatus: 'disputed',
+      paymentMethod: 'Bank Transfer',
+      reportedAmount: 2900,
+      paymentProofName: 'proof_902.jpg',
+    ),
+  ];
+
+  static final auctions = <Auction>[
+    Auction(
+      id: 'A100',
+      artworkId: '1',
+      title: 'Golden Dusk',
+      artistName: 'Maria Reyes',
+      currentBid: 4200,
+      highestBidder: 'Collector99',
+      endAt: DateTime.now().add(const Duration(minutes: 90)),
+    ),
+    Auction(
+      id: 'A101',
+      artworkId: '3',
+      title: 'Quiet Harbor',
+      artistName: 'Lian Santos',
+      currentBid: 5100,
+      highestBidder: 'ArtLoverPH',
+      endAt: DateTime.now().add(const Duration(minutes: 45)),
+    ),
   ];
 
   static final notifications = <NotificationItem>[
@@ -282,7 +344,9 @@ class MockSeeder {
   }
 
   static ConversationPreview getOrCreateConversation(String name) {
-    final match = conversations.where((item) => item.otherName == name).toList();
+    final match = conversations
+        .where((item) => item.otherName == name)
+        .toList();
     if (match.isNotEmpty) {
       return match.first;
     }
@@ -382,13 +446,15 @@ class MockSeeder {
     }
   }
 
-  static bool isBoosted(String artworkId) => featureBoostedArtworkIds.contains(
-    artworkId,
-  );
+  static bool isBoosted(String artworkId) =>
+      featureBoostedArtworkIds.contains(artworkId);
 
   static void markArtworkSold(String artworkId) {
     soldArtworkIds.add(artworkId);
-    addNotification('Artwork sold', 'Artwork #$artworkId has been marked sold.');
+    addNotification(
+      'Artwork sold',
+      'Artwork #$artworkId has been marked sold.',
+    );
   }
 
   static bool isSold(String artworkId) => soldArtworkIds.contains(artworkId);
@@ -397,29 +463,157 @@ class MockSeeder {
     final index = artworks.indexWhere((item) => item.id == artworkId);
     if (index < 0) return;
     final current = artworks[index];
-    
+
     // Create new bid history entry
     final newBid = Bid(
       bidderName: bidderName,
       amount: amount,
       timestamp: DateTime.now(),
     );
-    
+
     // Create updated artwork with new bid and history
     final updated = current.copyWith(
       highestBid: amount,
       bidCount: current.bidCount + 1,
       bidHistory: [...current.bidHistory, newBid],
     );
-    
+
     artworks[index] = updated;
     _artworkUpdateController.add(updated);
-    
+
     // Add notification for the artist
     addNotification(
       'New Bid Placed',
       '$bidderName placed a bid of PHP ${amount.toStringAsFixed(0)} on "${current.title}".',
     );
+  }
+
+  static Order addOrder({required String artworkId, required double total}) {
+    final order = Order(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      artworkId: artworkId,
+      status: 'Processing',
+      total: total,
+      paymentStatus: 'pending',
+    );
+    orders.insert(0, order);
+    addNotification('Order created', 'Order #${order.id} is now processing.');
+    return order;
+  }
+
+  static void reportExternalPayment({
+    required String orderId,
+    required double amount,
+    required String method,
+    String? proofFileName,
+  }) {
+    final index = orders.indexWhere((item) => item.id == orderId);
+    if (index < 0) return;
+    final current = orders[index];
+    orders[index] = Order(
+      id: current.id,
+      artworkId: current.artworkId,
+      status: current.status,
+      total: current.total,
+      paymentStatus: 'pending',
+      paymentMethod: method,
+      reportedAmount: amount,
+      paymentProofName: proofFileName,
+      artistConfirmedPayment: false,
+    );
+    addNotification(
+      'Payment reported',
+      'Payment report submitted for order #$orderId via $method.',
+    );
+  }
+
+  static void confirmPayment(String orderId) {
+    final index = orders.indexWhere((item) => item.id == orderId);
+    if (index < 0) return;
+    final current = orders[index];
+    orders[index] = Order(
+      id: current.id,
+      artworkId: current.artworkId,
+      status: current.status,
+      total: current.total,
+      paymentStatus: 'confirmed',
+      paymentMethod: current.paymentMethod,
+      reportedAmount: current.reportedAmount,
+      paymentProofName: current.paymentProofName,
+      artistConfirmedPayment: true,
+    );
+    addNotification(
+      'Payment confirmed',
+      'Artist confirmed payment for order #$orderId.',
+    );
+  }
+
+  static void disputePayment(String orderId) {
+    final index = orders.indexWhere((item) => item.id == orderId);
+    if (index < 0) return;
+    final current = orders[index];
+    orders[index] = Order(
+      id: current.id,
+      artworkId: current.artworkId,
+      status: current.status,
+      total: current.total,
+      paymentStatus: 'disputed',
+      paymentMethod: current.paymentMethod,
+      reportedAmount: current.reportedAmount,
+      paymentProofName: current.paymentProofName,
+      artistConfirmedPayment: false,
+    );
+    addNotification(
+      'Payment disputed',
+      'Payment report for order #$orderId has been flagged for review.',
+    );
+  }
+
+  static bool placeAuctionBid({
+    required String auctionId,
+    required double amount,
+    String bidder = 'me',
+  }) {
+    final index = auctions.indexWhere((item) => item.id == auctionId);
+    if (index < 0) return false;
+    final current = auctions[index];
+    if (current.completed || DateTime.now().isAfter(current.endAt)) {
+      return false;
+    }
+    if (amount <= current.currentBid) {
+      return false;
+    }
+    auctions[index] = current.copyWith(
+      currentBid: amount,
+      highestBidder: bidder,
+    );
+    addNotification(
+      'Bid placed',
+      'You are now the highest bidder for ${current.title} at PHP ${amount.toStringAsFixed(0)}.',
+    );
+    return true;
+  }
+
+  static Order? settleAuction(String auctionId) {
+    final index = auctions.indexWhere((item) => item.id == auctionId);
+    if (index < 0) return null;
+    final auction = auctions[index];
+    if (auction.completed || DateTime.now().isBefore(auction.endAt)) {
+      return null;
+    }
+    auctions[index] = auction.copyWith(completed: true);
+    if (auction.highestBidder != 'me') {
+      return null;
+    }
+    final order = addOrder(
+      artworkId: auction.artworkId,
+      total: auction.currentBid,
+    );
+    addNotification(
+      'Auction won',
+      'You won ${auction.title}. Order #${order.id} was created.',
+    );
+    return order;
   }
 
   static void addCommission({
@@ -449,7 +643,10 @@ class MockSeeder {
       status: nextStatus,
       budget: current.budget,
     );
-    addNotification('Commission update', '${current.title} is now $nextStatus.');
+    addNotification(
+      'Commission update',
+      '${current.title} is now $nextStatus.',
+    );
   }
 
   static void addReview({
@@ -479,27 +676,34 @@ class MockSeeder {
 
   // --- Auction Simulation ---
   static Timer? _globalAuctionTimer;
-  
+
   static void startGlobalAuctionSimulation() {
     if (_globalAuctionTimer != null) return;
-    
+
     _globalAuctionTimer = Timer.periodic(const Duration(seconds: 45), (timer) {
-      final auctionArtworks = artworks.where((a) => a.isAuction && (a.auctionEndTime?.isAfter(DateTime.now()) ?? false)).toList();
+      final auctionArtworks = artworks
+          .where(
+            (a) =>
+                a.isAuction &&
+                (a.auctionEndTime?.isAfter(DateTime.now()) ?? false),
+          )
+          .toList();
       if (auctionArtworks.isEmpty) return;
-      
+
       final random = math.Random();
       // 30% chance to place a bid on a random auction artwork
       if (random.nextDouble() < 0.3) {
         final artwork = auctionArtworks[random.nextInt(auctionArtworks.length)];
-        final currentBid = artwork.highestBid ?? artwork.startingPrice ?? artwork.price;
+        final currentBid =
+            artwork.highestBid ?? artwork.startingPrice ?? artwork.price;
         final increment = (random.nextInt(5) + 1) * 100.0;
         final newBid = currentBid + increment;
-        
+
         placeBid(artwork.id, newBid, 'Collector_${random.nextInt(1000)}');
       }
     });
   }
-  
+
   static void stopGlobalAuctionSimulation() {
     _globalAuctionTimer?.cancel();
     _globalAuctionTimer = null;

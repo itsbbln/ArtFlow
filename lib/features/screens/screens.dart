@@ -13,6 +13,7 @@ import '../auth/domain/auth_status.dart';
 import '../auth/presentation/auth_state.dart';
 import '../entities/models/artwork.dart';
 import '../entities/models/commission.dart';
+import '../entities/models/auction.dart';
 import '../entities/models/order.dart';
 import '../payments/data/mock_payment_gateway.dart';
 import '../shared/data/mock_seeder.dart';
@@ -103,7 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _isLogin = true;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
@@ -141,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _showError('Password must be at least 6 characters');
       return false;
     }
-    
+
     if (!_isLogin) {
       if (_fullNameController.text.trim().isEmpty) {
         _showError('Please enter your full name');
@@ -179,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_validateInputs()) return;
 
     final auth = context.read<AuthState>();
-    
+
     if (_isLogin) {
       await auth.login(
         email: _emailController.text.trim(),
@@ -241,9 +242,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   children: [
                     Text(
                       _isLogin ? 'Welcome back' : 'Create your account',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(fontWeight: FontWeight.w800),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
@@ -251,9 +251,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _isLogin
                           ? 'Log in to discover and collect amazing art'
                           : 'Join ArtFlow to discover and collect amazing art',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.black54,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyLarge?.copyWith(color: Colors.black54),
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -323,14 +323,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                   title: RichText(
                     text: TextSpan(
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.black54,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(color: Colors.black54),
                       children: [
                         const TextSpan(text: 'I agree to the '),
                         TextSpan(
                           text: 'Terms of Service',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
                                 color: Theme.of(context).colorScheme.primary,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -348,7 +349,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 width: double.infinity,
                 height: 52,
                 child: FilledButton(
-                  onPressed: auth.status == AuthStatus.checking ? null : _handleSubmit,
+                  onPressed: auth.status == AuthStatus.checking
+                      ? null
+                      : _handleSubmit,
                   style: FilledButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     shape: RoundedRectangleBorder(
@@ -366,7 +369,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         )
                       : Text(
                           _isLogin ? 'Sign In' : 'Create Account',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -388,9 +392,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                   child: Text(
                     'Skip for now',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Colors.black54,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleSmall?.copyWith(color: Colors.black54),
                   ),
                 ),
               ),
@@ -407,9 +411,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       _isLogin
                           ? "Don't have an account? "
                           : 'Already have an account? ',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.black54,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
                     ),
                     GestureDetector(
                       onTap: () {
@@ -422,9 +426,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Text(
                         _isLogin ? 'Create account' : 'Sign in',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                   ],
@@ -473,16 +477,16 @@ class VerificationPage extends StatelessWidget {
                 Text(
                   'Application Under Review',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'Your artist application has been submitted. Our team is currently reviewing your profile and sample artworks. This usually takes 24-48 hours.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.black54,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyLarge?.copyWith(color: Colors.black54),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
@@ -549,9 +553,9 @@ class _FormField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         TextField(
@@ -582,15 +586,11 @@ class _FormField extends StatelessWidget {
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFE4D8CB),
-              ),
+              borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                color: Color(0xFFE4D8CB),
-              ),
+              borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -635,10 +635,7 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -655,21 +652,21 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             children: [
               const SizedBox(height: 20),
-              
+
               // Header
               Text(
                 "What's your style?",
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 "Select your art interests so we can personalize your feed with artworks you'll love.",
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.black54,
-                      height: 1.5,
-                    ),
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 28),
 
@@ -683,10 +680,9 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
                     selected: selected,
                     label: Text(item),
                     backgroundColor: Colors.white,
-                    selectedColor: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.1),
+                    selectedColor: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     side: BorderSide(
                       color: selected
                           ? Theme.of(context).colorScheme.primary
@@ -712,9 +708,9 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
               Center(
                 child: Text(
                   '${_selected.length} interests selected',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.black54,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(color: Colors.black54),
                 ),
               ),
 
@@ -740,9 +736,9 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
                   child: Text(
                     'Continue to Explore',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
@@ -754,9 +750,9 @@ class _BuyerOnboardingScreenState extends State<BuyerOnboardingScreen> {
                   onPressed: () => context.go('/'),
                   child: Text(
                     'Skip this step',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Colors.black54,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleSmall?.copyWith(color: Colors.black54),
                   ),
                 ),
               ),
@@ -821,10 +817,7 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
+      appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -846,16 +839,16 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
               Text(
                 'Create your artist profile',
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                  fontWeight: FontWeight.w800,
+                ),
               ),
               const SizedBox(height: 12),
               Text(
                 'Let collectors know about your creative journey and artistic style.',
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.black54,
-                      height: 1.5,
-                    ),
+                  color: Colors.black54,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 32),
 
@@ -866,19 +859,24 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   Text(
                     'Primary Medium *',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedMedium,
-                    items: _mediums.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
+                    items: _mediums
+                        .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                        .toList(),
                     onChanged: (val) => setState(() => _selectedMedium = val!),
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.category_outlined),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
@@ -900,8 +898,8 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   Text(
                     'Primary Art Style *',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -909,9 +907,7 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                     onChanged: (_) => setState(() {}),
                     decoration: InputDecoration(
                       hintText: 'e.g. Abstract, Digital, Oil Painting',
-                      hintStyle: TextStyle(
-                        color: Colors.black26,
-                      ),
+                      hintStyle: TextStyle(color: Colors.black26),
                       prefixIcon: const Icon(Icons.palette_outlined),
                       filled: true,
                       fillColor: Colors.white,
@@ -921,15 +917,11 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE4D8CB),
-                        ),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE4D8CB),
-                        ),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -951,8 +943,8 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   Text(
                     'Artist Pen Name *',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -964,7 +956,10 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                       prefixIcon: const Icon(Icons.person_outline),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
@@ -993,8 +988,8 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   Text(
                     'Portfolio Link *',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -1006,7 +1001,10 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                       prefixIcon: const Icon(Icons.link_outlined),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
@@ -1035,8 +1033,8 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   Text(
                     'About Your Art *',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   TextField(
@@ -1047,10 +1045,9 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                     decoration: InputDecoration(
                       hintText:
                           'Tell collectors about your creative journey, inspiration, and what makes your work unique...',
-                      counterText: '', // Hide default counter to use custom one below
-                      hintStyle: TextStyle(
-                        color: Colors.black26,
-                      ),
+                      counterText:
+                          '', // Hide default counter to use custom one below
+                      hintStyle: TextStyle(color: Colors.black26),
                       filled: true,
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(
@@ -1059,15 +1056,11 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE4D8CB),
-                        ),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                          color: Color(0xFFE4D8CB),
-                        ),
+                        borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -1081,9 +1074,9 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '${_bioController.text.length}/500 characters',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.black54,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.black54),
                   ),
                 ],
               ),
@@ -1097,8 +1090,8 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   Text(
                     'Sample Artworks (Optional)',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
@@ -1120,14 +1113,26 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: const Color(0xFFE4D8CB), style: BorderStyle.solid),
+                              border: Border.all(
+                                color: const Color(0xFFE4D8CB),
+                                style: BorderStyle.solid,
+                              ),
                             ),
                             child: const Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.add_photo_alternate_outlined, color: Colors.black54),
+                                Icon(
+                                  Icons.add_photo_alternate_outlined,
+                                  color: Colors.black54,
+                                ),
                                 SizedBox(height: 4),
-                                Text('Add Image', style: TextStyle(fontSize: 10, color: Colors.black54)),
+                                Text(
+                                  'Add Image',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Colors.black54,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -1162,7 +1167,11 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                                       color: Colors.black54,
                                       shape: BoxShape.circle,
                                     ),
-                                    child: const Icon(Icons.close, size: 12, color: Colors.white),
+                                    child: const Icon(
+                                      Icons.close,
+                                      size: 12,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -1186,12 +1195,15 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                       ? () async {
                           setState(() => _isSubmitting = true);
                           try {
-                            await context.read<AuthState>().submitArtistApplication(
+                            await context
+                                .read<AuthState>()
+                                .submitArtistApplication(
                                   style: _styleController.text.trim(),
                                   bio: _bioController.text.trim(),
                                   medium: _selectedMedium,
                                   penName: _penNameController.text.trim(),
-                                  portfolioUrl: _portfolioController.text.trim(),
+                                  portfolioUrl: _portfolioController.text
+                                      .trim(),
                                   sampleArtworks: _sampleArtworks,
                                 );
                             if (!context.mounted) return;
@@ -1218,7 +1230,8 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                         )
                       : Text(
                           'Launch Dashboard',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -1233,9 +1246,9 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
                   onPressed: () => context.go('/'),
                   child: Text(
                     'Skip for now',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: Colors.black54,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleSmall?.copyWith(color: Colors.black54),
                   ),
                 ),
               ),
@@ -1259,8 +1272,7 @@ class HomeScreen extends StatelessWidget {
     final categories = MockSeeder.categories;
     final myCommissions = MockSeeder.commissions;
 
-    final firstFeatured =
-        featured.isNotEmpty ? featured.first : null;
+    final firstFeatured = featured.isNotEmpty ? featured.first : null;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
@@ -1268,20 +1280,22 @@ class HomeScreen extends StatelessWidget {
         Text(
           "Maayong adlaw, ${auth.displayName.split(' ').first}",
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.black54,
-                fontWeight: FontWeight.w600,
-              ),
+            color: Colors.black54,
+            fontWeight: FontWeight.w600,
+          ),
         ),
 
         const SizedBox(height: 4),
 
-        Text('Discover Local',
-            style: Theme.of(context).textTheme.headlineMedium),
+        Text(
+          'Discover Local',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
         Text(
           'Bukidnon Art',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-              ),
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
 
         const SizedBox(height: 14),
@@ -1327,13 +1341,10 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Featured Artwork',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.copyWith(
-                              color: Theme.of(context).colorScheme.primary,
-                              fontWeight: FontWeight.w700,
-                            ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -1349,8 +1360,8 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       FilledButton.tonal(
-                        onPressed: () => context
-                            .push('/artwork/${firstFeatured.id}'),
+                        onPressed: () =>
+                            context.push('/artwork/${firstFeatured.id}'),
                         child: const Text('View Artwork'),
                       ),
                     ],
@@ -1381,8 +1392,7 @@ class HomeScreen extends StatelessWidget {
         // ================= CATEGORIES =================
         Row(
           children: [
-            Text('Categories',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text('Categories', style: Theme.of(context).textTheme.titleLarge),
             const Spacer(),
             TextButton(
               onPressed: () => context.push('/explore'),
@@ -1398,14 +1408,12 @@ class HomeScreen extends StatelessWidget {
             itemCount: categories.length,
             separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
-              final label =
-                  categories[index].replaceAll('_', ' ');
+              final label = categories[index].replaceAll('_', ' ');
 
               final isSelected = index == 0;
 
               return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: isSelected
@@ -1419,8 +1427,7 @@ class HomeScreen extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color:
-                        isSelected ? Colors.white : Colors.black87,
+                    color: isSelected ? Colors.white : Colors.black87,
                   ),
                 ),
               );
@@ -1439,8 +1446,7 @@ class HomeScreen extends StatelessWidget {
               color: Theme.of(context).colorScheme.secondary,
             ),
             const SizedBox(width: 6),
-            Text('Trending Now',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text('Trending Now', style: Theme.of(context).textTheme.titleLarge),
           ],
         ),
 
@@ -1456,8 +1462,7 @@ class HomeScreen extends StatelessWidget {
             itemCount: artworks.length,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               mainAxisSpacing: 10,
               crossAxisSpacing: 10,
@@ -1467,8 +1472,7 @@ class HomeScreen extends StatelessWidget {
               final item = artworks[index];
               return ArtworkCard(
                 artwork: item,
-                onTap: () =>
-                    context.push('/artwork/${item.id}'),
+                onTap: () => context.push('/artwork/${item.id}'),
               );
             },
           ),
@@ -1560,20 +1564,17 @@ class _PartnerCarouselState extends State<PartnerCarousel> {
                     scale = (1 - (scale * 0.15)).clamp(0.9, 1.0);
                   }
 
-                  return Transform.scale(
-                    scale: scale,
-                    child: child,
-                  );
+                  return Transform.scale(scale: scale, child: child);
                 },
                 child: Container(
                   margin: const EdgeInsets.only(right: 10),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(22),
                     gradient: LinearGradient(
-                      colors: [
-                        slide.color,
-                        slide.color.withValues(alpha: 0.1),
-                      ],
+                          colors: [
+                            slide.color,
+                            slide.color.withValues(alpha: 0.1),
+                          ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -1694,10 +1695,10 @@ class FeaturedArtistSection extends StatelessWidget {
     }
 
     // sort by rating (better "featured" logic)
-    artists.sort((a, b) =>
-        MockSeeder.averageRating(b).compareTo(
-              MockSeeder.averageRating(a),
-            ));
+    artists.sort(
+      (a, b) =>
+          MockSeeder.averageRating(b).compareTo(MockSeeder.averageRating(a)),
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1709,10 +1710,7 @@ class FeaturedArtistSection extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const Spacer(),
-            TextButton(
-              onPressed: () {},
-              child: const Text('See all'),
-            ),
+            TextButton(onPressed: () {}, child: const Text('See all')),
           ],
         ),
         const SizedBox(height: 10),
@@ -1730,8 +1728,8 @@ class FeaturedArtistSection extends StatelessWidget {
               final role = index == 0
                   ? 'Top artist'
                   : index < 3
-                      ? 'Featured creator'
-                      : 'Bukidnon artist';
+                  ? 'Featured creator'
+                  : 'Bukidnon artist';
 
               return _FeaturedArtistCard(
                 artistName: artistName,
@@ -1745,7 +1743,6 @@ class FeaturedArtistSection extends StatelessWidget {
     );
   }
 }
-
 
 class _FeaturedArtistCard extends StatelessWidget {
   const _FeaturedArtistCard({
@@ -1822,10 +1819,7 @@ class _FeaturedArtistCard extends StatelessWidget {
 
               Text(
                 role,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Colors.black54,
-                ),
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
               ),
 
               const Spacer(),
@@ -1904,9 +1898,11 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
     final commissions = MockSeeder.commissions;
     final openCommissions = commissions.where((c) {
       final s = c.status.toLowerCase();
-      return s == 'pending' || s == 'accepted' || s == 'active' || s == 'in review';
-    }).toList();
-    final completedCommissions = commissions.where((c) => c.status.toLowerCase() == 'completed').length;
+      return s == 'pending' || s == 'active' || s == 'in review';
+    }).length;
+    final completedCommissions = commissions
+        .where((c) => c.status.toLowerCase() == 'completed')
+        .length;
     final myArtworks = MockSeeder.artworks
         .where((item) => item.artistName == auth.displayName)
         .toList();
@@ -1919,10 +1915,7 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
     final myArtworkIds = myArtworks.map((a) => a.id).toSet();
     final revenue = MockSeeder.orders
         .where((o) => myArtworkIds.contains(o.artworkId))
-        .fold<double>(
-      0,
-      (sum, item) => sum + item.total,
-    );
+        .fold<double>(0, (sum, item) => sum + item.total);
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -2021,7 +2014,7 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
                 children: [
                   _DashboardStat(label: 'Views', value: '${myArtworks.fold<int>(0, (sum, a) => sum + (MockSeeder.analyticsViews[a.id] ?? 0))}'),
                   _DashboardStat(label: 'Likes', value: '${(myArtworks.length * 12)}'),
-                  _DashboardStat(label: 'Commissions', value: '${openCommissions.length}'),
+                  _DashboardStat(label: 'Commissions', value: '$openCommissions'),
                   _DashboardStat(label: 'Rating', value: avgRating == 0 ? '-' : avgRating.toStringAsFixed(1)),
                 ],
               ),
@@ -2065,6 +2058,24 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
         Row(
           children: [
             Expanded(
+              child: _MetricCard(
+                label: 'Open Commissions',
+                value: '$openCommissions',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MetricCard(
+                label: 'Completed',
+                value: '$completedCommissions',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
               child: _QuickActionCard(
                 icon: Icons.receipt_long_outlined,
                 label: 'Orders',
@@ -2094,6 +2105,31 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
               Text('Recent Auction Bids', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
               const Icon(Icons.gavel_outlined, color: Colors.orange, size: 20),
             ],
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _MetricCard(
+                label: 'Portfolio',
+                value: '${myArtworks.length}',
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _MetricCard(
+                label: 'Inquiries',
+                value:
+                    '${MockSeeder.analyticsInquiries[auth.displayName] ?? 0}',
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        if (auth.isVerified)
+          FilledButton.icon(
+            onPressed: () => context.push('/create'),
+            icon: const Icon(Icons.add),
+            label: const Text('Upload Artwork'),
           ),
           const SizedBox(height: 12),
           ...(() {
@@ -2101,7 +2137,6 @@ class _ArtistDashboardScreenState extends State<ArtistDashboardScreen> {
               .where((a) => a.isAuction && a.bidHistory.isNotEmpty)
               .expand((a) => a.bidHistory.map((b) => MapEntry(a, b)))
               .toList();
-            bidEntries.sort((a, b) => b.value.timestamp.compareTo(a.value.timestamp));
             
             return bidEntries.take(3).map((entry) {
               final artwork = entry.key;
@@ -2366,14 +2401,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
   String _selectedCategory = 'all';
   bool _showFilters = false;
   String _sortBy = 'newest';
+  String _selectedStyle = 'all';
+  String _selectedMediumType = 'all';
   final _artistController = TextEditingController();
-  final _styleController = TextEditingController();
   RangeValues _priceRange = const RangeValues(0, 6000);
 
   @override
   void dispose() {
     _artistController.dispose();
-    _styleController.dispose();
     super.dispose();
   }
 
@@ -2388,18 +2423,22 @@ class _ExploreScreenState extends State<ExploreScreen> {
             _artistController.text.toLowerCase(),
           );
       final styleMatch =
-          _styleController.text.trim().isEmpty ||
-          item.medium?.toLowerCase().contains(_styleController.text.toLowerCase()) ==
-              true;
+          _selectedStyle == 'all' || _artStyleFor(item) == _selectedStyle;
+      final mediumTypeMatch =
+          _selectedMediumType == 'all' ||
+          _mediumTypeFor(item) == _selectedMediumType;
       final priceMatch =
           item.price >= _priceRange.start && item.price <= _priceRange.end;
       final queryMatch =
           item.title.toLowerCase().contains(_query.toLowerCase()) ||
-          item.artistName.toLowerCase().contains(_query.toLowerCase());
+          item.artistName.toLowerCase().contains(_query.toLowerCase()) ||
+          (item.description?.toLowerCase().contains(_query.toLowerCase()) ??
+              false);
       return categoryMatch &&
           queryMatch &&
           artistMatch &&
           styleMatch &&
+          mediumTypeMatch &&
           priceMatch;
     }).toList();
 
@@ -2411,9 +2450,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
       artworks.sort((a, b) => b.avgRating.compareTo(a.avgRating));
     } else if (_sortBy == 'featured') {
       artworks.sort(
-        (a, b) => MockSeeder.isBoosted(b.id).toString().compareTo(
-          MockSeeder.isBoosted(a.id).toString(),
-        ),
+        (a, b) => MockSeeder.isBoosted(
+          b.id,
+        ).toString().compareTo(MockSeeder.isBoosted(a.id).toString()),
       );
     }
 
@@ -2482,11 +2521,46 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          TextField(
-            controller: _styleController,
-            onChanged: (_) => setState(() {}),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedStyle,
+            items: const [
+              DropdownMenuItem(value: 'all', child: Text('All styles')),
+              DropdownMenuItem(value: 'realism', child: Text('Realism')),
+              DropdownMenuItem(value: 'abstract', child: Text('Abstract')),
+              DropdownMenuItem(value: 'anime', child: Text('Anime')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _selectedStyle = value;
+                });
+              }
+            },
             decoration: const InputDecoration(
-              labelText: 'Style / Medium',
+              labelText: 'Art style',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            initialValue: _selectedMediumType,
+            items: const [
+              DropdownMenuItem(value: 'all', child: Text('All medium types')),
+              DropdownMenuItem(
+                value: 'traditional',
+                child: Text('Traditional'),
+              ),
+              DropdownMenuItem(value: 'digital', child: Text('Digital')),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  _selectedMediumType = value;
+                });
+              }
+            },
+            decoration: const InputDecoration(
+              labelText: 'Medium type',
               border: OutlineInputBorder(),
             ),
           ),
@@ -2952,6 +3026,10 @@ class _ArtworkDetailScreenState extends State<ArtworkDetailScreen> {
                       content: Text('${result.message} (${result.reference})'),
                     ),
                   );
+                  MockSeeder.addOrder(
+                    artworkId: artwork.id,
+                    total: artwork.price,
+                  );
                   context.push('/orders');
                 },
                 icon: Icon(artwork.isAuction ? Icons.gavel_outlined : Icons.shopping_bag_outlined),
@@ -3094,10 +3172,113 @@ class _CreateArtworkScreenState extends State<CreateArtworkScreen> {
                     ),
                   ],
                 ],
+                onChanged: (value) => setState(() => _selectedCategory = value),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _mediumController,
+                decoration: const InputDecoration(
+                  labelText: 'Medium',
+                  hintText: 'e.g. Oil on canvas',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _sizeController,
+                decoration: const InputDecoration(
+                  labelText: 'Size',
+                  hintText: 'e.g. 24x36 inches',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _tagsController,
+          decoration: const InputDecoration(
+            labelText: 'Tags (comma separated)',
+            hintText: 'abstract, nature, Bukidnon...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        if (auth.hasFeaturedBoost) ...[
+          const SizedBox(height: 12),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _featureThisArtwork,
+            title: const Text('Feature this artwork'),
+            subtitle: const Text('Uses your active boost slot'),
+            onChanged: (value) => setState(() => _featureThisArtwork = value),
+          ),
+        ],
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          onPressed: () {
+            if (!auth.isVerified && !auth.isAdmin) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'You must be a verified artist to publish artworks.',
+                  ),
+                ),
+              );
+              return;
+            }
+            final parsedPrice = double.tryParse(_priceController.text) ?? 0;
+            if (_titleController.text.trim().isEmpty ||
+                _selectedCategory == null ||
+                parsedPrice <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Please complete title, category and price.'),
+                ),
+              );
+              return;
+            }
+            final record = Artwork(
+              id:
+                  editing?.id ??
+                  DateTime.now().millisecondsSinceEpoch.toString(),
+              title: _titleController.text.trim(),
+              artistName: auth.displayName,
+              price: parsedPrice,
+              description: _descriptionController.text.trim(),
+              category: _selectedCategory ?? 'other',
+              medium: _mediumController.text.trim(),
+              size: _sizeController.text.trim(),
+              imageUrl: MockSeeder.placeholder,
+              images: const [MockSeeder.placeholder],
+              isFeatured: _featureThisArtwork,
+              avgRating: editing?.avgRating ?? 0,
+            );
+            MockSeeder.upsertArtwork(record);
+            MockSeeder.toggleFeaturedBoost(record.id, _featureThisArtwork);
+            MockSeeder.addNotification(
+              'Artwork updated',
+              '${record.title} has been ${editing == null ? 'uploaded' : 'saved'}.',
+            );
+            context.go('/artist-dashboard');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  editing == null
+                      ? 'Artwork published (mock).'
+                      : 'Artwork updated (mock).',
+                ),
               ),
             );
           },
-          steps: [
             Step(
               isActive: _currentStep >= 0,
               state: _currentStep > 0 ? StepState.complete : StepState.indexed,
@@ -3165,7 +3346,6 @@ class _CreateArtworkScreenState extends State<CreateArtworkScreen> {
                     ),
                   ],
                 ),
-              ),
             ),
             Step(
               isActive: _currentStep >= 1,
@@ -3512,9 +3692,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             const SizedBox(height: 36),
                             Text(
                               displayName,
-                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    color: Colors.black87,
-                                  ),
+                              style: Theme.of(context).textTheme.headlineSmall
+                                  ?.copyWith(color: Colors.black87),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 6),
@@ -3534,12 +3713,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     auth.isAdmin
                                         ? 'Admin'
                                         : auth.isVerifiedArtist
-                                            ? 'Verified Artist'
-                                            : auth.isArtist
-                                                ? 'Artist'
-                                                : 'Buyer',
+                                        ? 'Verified Artist'
+                                        : auth.isArtist
+                                        ? 'Artist'
+                                        : 'Buyer',
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
                                   visualDensity: VisualDensity.compact,
                                 ),
                                 if (auth.isScholarVerified) ...[
@@ -3555,8 +3736,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ],
                                 const SizedBox(width: 10),
                                 Chip(
-                                  label: Text(auth.isArtist ? 'Creator' : 'Collector'),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  label: Text(
+                                    auth.isArtist ? 'Creator' : 'Collector',
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                  ),
                                   visualDensity: VisualDensity.compact,
                                 ),
                               ],
@@ -3811,10 +3996,7 @@ class _ProfileEmptyState extends StatelessWidget {
           const SizedBox(height: 6),
           Text(subtitle, style: const TextStyle(color: Colors.black54)),
           const SizedBox(height: 12),
-          FilledButton(
-            onPressed: () => context.push(route),
-            child: Text(cta),
-          ),
+          FilledButton(onPressed: () => context.push(route), child: Text(cta)),
         ],
       ),
     );
@@ -4251,11 +4433,11 @@ class _ChatScreenState extends State<ChatScreen> {
         .firstOrNull;
     final fallbackName = widget.conversationId.startsWith('new_')
         ? widget.conversationId
-            .replaceFirst('new_', '')
-            .split('_')
-            .where((part) => part.isNotEmpty)
-            .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-            .join(' ')
+              .replaceFirst('new_', '')
+              .split('_')
+              .where((part) => part.isNotEmpty)
+              .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
+              .join(' ')
         : 'Artist';
     final chatName = matchedConversation?.otherName ?? fallbackName;
     final chatInitial = chatName.isNotEmpty ? chatName[0].toUpperCase() : 'A';
@@ -4446,9 +4628,9 @@ class _CommissionRequestScreenState extends State<CommissionRequestScreen> {
               brief: '${_briefController.text.trim()} (Timeline: $_timeline)',
               budget: budget <= 0 ? 1000 : budget,
             );
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('Commission request sent.')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Commission request sent.')),
+            );
             context.go('/commissions');
           },
           child: const Text('Send request'),
@@ -4819,6 +5001,131 @@ class OrdersScreen extends StatefulWidget {
 }
 
 class _OrdersScreenState extends State<OrdersScreen> {
+  Future<void> _showPaymentReportDialog(
+    BuildContext context,
+    Order order,
+  ) async {
+    final amountController = TextEditingController(
+      text: order.total.toStringAsFixed(0),
+    );
+    String method = order.paymentMethod ?? 'GCash';
+    XFile? proof;
+
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text('Report Payment: #${order.id}'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: amountController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Payment amount',
+                        border: OutlineInputBorder(),
+                        prefixText: 'PHP ',
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      initialValue: method,
+                      items: const [
+                        DropdownMenuItem(value: 'GCash', child: Text('GCash')),
+                        DropdownMenuItem(value: 'Maya', child: Text('Maya')),
+                        DropdownMenuItem(
+                          value: 'Bank Transfer',
+                          child: Text('Bank Transfer'),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        method = value ?? 'GCash';
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'Payment method',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final picker = ImagePicker();
+                        final selected = await picker.pickImage(
+                          source: ImageSource.gallery,
+                        );
+                        if (selected != null) {
+                          setDialogState(() {
+                            proof = selected;
+                          });
+                        }
+                      },
+                      icon: const Icon(Icons.upload_file_outlined),
+                      label: Text(
+                        proof == null
+                            ? 'Upload proof (optional)'
+                            : 'Proof: ${proof!.name}',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Submit'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (submitted == true) {
+      final amount = double.tryParse(amountController.text.trim()) ?? 0;
+      setState(() {
+        MockSeeder.reportExternalPayment(
+          orderId: order.id,
+          amount: amount <= 0 ? order.total : amount,
+          method: method,
+          proofFileName: proof?.name,
+        );
+      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment report submitted.')),
+        );
+      }
+    }
+    amountController.dispose();
+  }
+
+  void _confirmPayment(String orderId) {
+    setState(() {
+      MockSeeder.confirmPayment(orderId);
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Payment marked confirmed.')));
+  }
+
+  void _disputePayment(String orderId) {
+    setState(() {
+      MockSeeder.disputePayment(orderId);
+    });
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Payment marked disputed.')));
+  }
+
   Future<void> _rateArtist(BuildContext context, String artistName) async {
     int rating = 5;
     final commentController = TextEditingController();
@@ -4832,11 +5139,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
             children: [
               DropdownButtonFormField<int>(
                 initialValue: rating,
-                items: [1, 2, 3, 4, 5]
-                    .map((value) {
-                      return DropdownMenuItem(value: value, child: Text('$value'));
-                    })
-                    .toList(),
+                items: [1, 2, 3, 4, 5].map((value) {
+                  return DropdownMenuItem(value: value, child: Text('$value'));
+                }).toList(),
                 onChanged: (value) => rating = value ?? 5,
               ),
               const SizedBox(height: 8),
@@ -4910,7 +5215,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               _statusChip(item.status),
                             ],
                           ),
-                        ),
                         const Divider(),
                         Row(
                           children: [
@@ -4921,7 +5225,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                     const SnackBar(content: Text('Payment handled externally.')),
                                   );
                                 },
-                                icon: const Icon(Icons.payment, size: 16),
                                 label: const Text('Payment Info', style: TextStyle(fontSize: 12)),
                               ),
                             ),
@@ -5101,12 +5404,50 @@ class _PricingGuidanceScreenState extends State<PricingGuidanceScreen> {
                           backgroundColor: const Color(0xFF8F1414),
                         ),
                         child: const Text('Use Suggested Minimum'),
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: orders.map((item) {
+        return Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              children: [
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text('Order #${item.id}'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Artwork ${item.artworkId}'),
+                      const SizedBox(height: 4),
+                      _paymentChip(item.paymentStatus),
+                    ],
+                  ),
+                  trailing: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('\$${item.total.toStringAsFixed(0)}'),
+                      const SizedBox(height: 2),
+                      Text(
+                        item.status,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () =>
+                            _showPaymentReportDialog(context, item),
+                        child: const Text('Report External Payment'),
                       ),
                     ),
                   ],
                 ],
-              ),
-            ),
             const SizedBox(height: 20),
             if (_marketAvg > 0)
               Container(
@@ -5152,6 +5493,40 @@ class _PricingGuidanceScreenState extends State<PricingGuidanceScreen> {
                   ],
                 ),
               ),
+                if (item.reportedAmount != null || item.paymentMethod != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Reported: PHP ${(item.reportedAmount ?? item.total).toStringAsFixed(0)}'
+                            ' via ${item.paymentMethod ?? 'N/A'}'
+                            '${item.paymentProofName != null ? ' (${item.paymentProofName})' : ''}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                if (item.paymentStatus.toLowerCase() == 'pending')
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _confirmPayment(item.id),
+                          child: const Text('Artist Confirm'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _disputePayment(item.id),
+                          child: const Text('Mark Disputed'),
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
             ),
           ],
         ],
@@ -5178,6 +5553,216 @@ class _PriceRow extends StatelessWidget {
   }
 }
 
+class AuctionsScreen extends StatefulWidget {
+  const AuctionsScreen({super.key});
+
+  @override
+  State<AuctionsScreen> createState() => _AuctionsScreenState();
+}
+
+class _AuctionsScreenState extends State<AuctionsScreen> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  String _countdownLabel(DateTime endAt) {
+    final diff = endAt.difference(DateTime.now());
+    if (diff.isNegative) {
+      return 'Ended';
+    }
+    final hours = diff.inHours;
+    final minutes = diff.inMinutes.remainder(60);
+    final seconds = diff.inSeconds.remainder(60);
+    return '${hours.toString().padLeft(2, '0')}:'
+        '${minutes.toString().padLeft(2, '0')}:'
+        '${seconds.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _placeBidDialog(Auction auction) async {
+    final controller = TextEditingController(
+      text: (auction.currentBid + 100).toStringAsFixed(0),
+    );
+    final submitted = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Place bid: ${auction.title}'),
+          content: TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Your bid',
+              prefixText: 'PHP ',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Place Bid'),
+            ),
+          ],
+        );
+      },
+    );
+    if (submitted == true) {
+      final amount = double.tryParse(controller.text.trim()) ?? 0;
+      final ok = MockSeeder.placeAuctionBid(auctionId: auction.id, amount: amount);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              ok
+                  ? 'Bid accepted.'
+                  : 'Bid must be higher than current bid and auction must be active.',
+            ),
+          ),
+        );
+        setState(() {});
+      }
+    }
+    controller.dispose();
+  }
+
+  void _finalizeAuction(Auction auction) {
+    final order = MockSeeder.settleAuction(auction.id);
+    setState(() {});
+    if (order != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You won! Order #${order.id} created.'),
+          action: SnackBarAction(
+            label: 'View',
+            onPressed: () => context.push('/orders'),
+          ),
+        ),
+      );
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Auction finalized. No new order was created for your account.',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auctions = MockSeeder.auctions;
+
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        Text('Live Auctions', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 10),
+        ...auctions.map((auction) {
+          final ended = DateTime.now().isAfter(auction.endAt);
+          return Card(
+            margin: const EdgeInsets.only(bottom: 10),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    auction.title,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'by ${auction.artistName}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _statusChip(
+                        'Highest: PHP ${auction.currentBid.toStringAsFixed(0)}',
+                      ),
+                      const SizedBox(width: 8),
+                      _statusChip('Ends in ${_countdownLabel(auction.endAt)}'),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Current highest bidder: ${auction.highestBidder == 'me' ? 'You' : auction.highestBidder}',
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: ended || auction.completed
+                              ? null
+                              : () => _placeBidDialog(auction),
+                          child: const Text('Place Bid'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: ended && !auction.completed
+                              ? () => _finalizeAuction(auction)
+                              : null,
+                          child: const Text('Finalize'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+Widget _paymentChip(String paymentStatus) {
+  final normalized = paymentStatus.toLowerCase();
+  Color color;
+  if (normalized == 'confirmed') {
+    color = const Color(0xFF166534);
+  } else if (normalized == 'disputed') {
+    color = const Color(0xFFB91C1C);
+  } else {
+    color = const Color(0xFF92400E);
+  }
+
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: color.withOpacity(0.12),
+      borderRadius: BorderRadius.circular(999),
+    ),
+    child: Text(
+      'Payment: ${paymentStatus[0].toUpperCase()}${paymentStatus.substring(1)}',
+      style: TextStyle(color: color, fontWeight: FontWeight.w600),
+    ),
+  );
+}
+
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
 
@@ -5186,7 +5771,6 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-
   @override
   Widget build(BuildContext context) {
     final notifications = MockSeeder.notifications;
@@ -5211,7 +5795,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
               leading: Icon(
-                item.read ? Icons.notifications_none : Icons.notifications_active,
+                item.read
+                    ? Icons.notifications_none
+                    : Icons.notifications_active,
               ),
               title: Text(item.title),
               subtitle: Text(item.body),
@@ -5684,13 +6270,32 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   String _query = '';
+  String _selectedStyle = 'all';
+  String _selectedMediumType = 'all';
+  RangeValues _priceRange = const RangeValues(0, 10000);
 
   @override
   Widget build(BuildContext context) {
     final items = MockSeeder.artworks.where((item) {
-      return item.title.toLowerCase().contains(_query.toLowerCase()) ||
-          item.artistName.toLowerCase().contains(_query.toLowerCase());
+      final query = _query.toLowerCase();
+      final queryMatch =
+          item.title.toLowerCase().contains(query) ||
+          item.artistName.toLowerCase().contains(query) ||
+          (item.description?.toLowerCase().contains(query) ?? false) ||
+          (item.medium?.toLowerCase().contains(query) ?? false);
+      final styleMatch =
+          _selectedStyle == 'all' || _artStyleFor(item) == _selectedStyle;
+      final mediumTypeMatch =
+          _selectedMediumType == 'all' ||
+          _mediumTypeFor(item) == _selectedMediumType;
+      final priceMatch =
+          item.price >= _priceRange.start && item.price <= _priceRange.end;
+      return queryMatch && styleMatch && mediumTypeMatch && priceMatch;
     }).toList();
+    final byCategory = <String, List<Artwork>>{};
+    for (final item in items) {
+      byCategory.putIfAbsent(item.category, () => []).add(item);
+    }
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -5703,19 +6308,124 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           onChanged: (value) => setState(() => _query = value),
         ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedStyle,
+          items: const [
+            DropdownMenuItem(value: 'all', child: Text('All styles')),
+            DropdownMenuItem(value: 'realism', child: Text('Realism')),
+            DropdownMenuItem(value: 'abstract', child: Text('Abstract')),
+            DropdownMenuItem(value: 'anime', child: Text('Anime')),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              setState(() {
+                _selectedStyle = value;
+              });
+            }
+          },
+          decoration: const InputDecoration(
+            labelText: 'Art style',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 10),
+        DropdownButtonFormField<String>(
+          initialValue: _selectedMediumType,
+          items: const [
+            DropdownMenuItem(value: 'all', child: Text('All medium types')),
+            DropdownMenuItem(value: 'traditional', child: Text('Traditional')),
+            DropdownMenuItem(value: 'digital', child: Text('Digital')),
+          ],
+          onChanged: (value) {
+            if (value != null) {
+              setState(() {
+                _selectedMediumType = value;
+              });
+            }
+          },
+          decoration: const InputDecoration(
+            labelText: 'Medium type',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 8),
+        RangeSlider(
+          values: _priceRange,
+          min: 0,
+          max: 10000,
+          divisions: 20,
+          labels: RangeLabels(
+            '₱${_priceRange.start.toStringAsFixed(0)}',
+            '₱${_priceRange.end.toStringAsFixed(0)}',
+          ),
+          onChanged: (value) => setState(() => _priceRange = value),
+        ),
         const SizedBox(height: 14),
-        ...items.map((item) {
+        Text(
+          'Browse by category',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        if (byCategory.isEmpty)
+          const Text('No artworks match your search and filters.'),
+        ...byCategory.entries.map((entry) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: ArtworkCard(
-              artwork: item,
-              onTap: () => context.push('/artwork/${item.id}'),
+            padding: const EdgeInsets.only(bottom: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.key.replaceAll('_', ' ').toUpperCase(),
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 260,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: entry.value.map((item) {
+                      return SizedBox(
+                        width: 190,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: ArtworkCard(
+                            artwork: item,
+                            onTap: () => context.push('/artwork/${item.id}'),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
             ),
           );
         }),
       ],
     );
   }
+}
+
+String _mediumTypeFor(Artwork item) {
+  final value = (item.medium ?? '').toLowerCase();
+  if (value.contains('digital')) {
+    return 'digital';
+  }
+  return 'traditional';
+}
+
+String _artStyleFor(Artwork item) {
+  final value =
+      '${item.category} ${item.medium ?? ''} ${item.description ?? ''}'
+          .toLowerCase();
+  if (value.contains('anime') || value.contains('character')) {
+    return 'anime';
+  }
+  if (value.contains('abstract') || value.contains('mixed')) {
+    return 'abstract';
+  }
+  return 'realism';
 }
 
 class AdminScreen extends StatelessWidget {
@@ -5725,11 +6435,7 @@ class AdminScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
     if (!auth.isAdmin) {
-      return const Scaffold(
-        body: Center(
-          child: Text('Admin access only.'),
-        ),
-      );
+      return const Scaffold(body: Center(child: Text('Admin access only.')));
     }
     return const AdminDashboardScreen();
   }

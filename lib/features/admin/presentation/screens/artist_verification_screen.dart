@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import '../../data/repositories/admin_repository.dart';
 import '../../domain/models/admin_models.dart';
@@ -7,7 +9,8 @@ class ArtistVerificationScreen extends StatefulWidget {
   const ArtistVerificationScreen({super.key});
 
   @override
-  State<ArtistVerificationScreen> createState() => _ArtistVerificationScreenState();
+  State<ArtistVerificationScreen> createState() =>
+      _ArtistVerificationScreenState();
 }
 
 class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
@@ -23,9 +26,7 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
         }
 
         if (snapshot.hasError) {
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
+          return Center(child: Text('Error: ${snapshot.error}'));
         }
 
         final applications = snapshot.data ?? [];
@@ -59,7 +60,10 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
     );
   }
 
-  Widget _buildApplicationCard(BuildContext context, ArtistVerificationApplication app) {
+  Widget _buildApplicationCard(
+    BuildContext context,
+    ArtistVerificationApplication app,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ExpansionTile(
@@ -74,15 +78,33 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
             ('Medium', app.medium),
             ('Submitted', app.submittedDate.toString().split('.')[0]),
           ]),
+          if (app.experience.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Experience',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(app.experience),
+                ),
+              ],
+            ),
+          ],
           const SizedBox(height: 16),
           // Bio
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Bio',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              const Text('Bio', style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -111,16 +133,11 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
                 itemBuilder: (context, index) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      app.sampleArtworks[index],
+                    child: SizedBox(
                       width: 120,
                       height: 120,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        width: 120,
-                        height: 120,
-                        color: Colors.grey[200],
-                        child: const Icon(Icons.image_not_supported),
+                      child: _ApplicationImage(
+                        source: app.sampleArtworks[index],
                       ),
                     ),
                   );
@@ -138,15 +155,9 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
             const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                app.identityVerificationUrl,
+              child: SizedBox(
                 height: 200,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
-                  height: 200,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.image_not_supported),
-                ),
+                child: _ApplicationImage(source: app.identityVerificationUrl),
               ),
             ),
             const SizedBox(height: 16),
@@ -156,7 +167,8 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton(
-                onPressed: () => _showRejectDialog(context, app.applicationId),
+                onPressed: () =>
+                    _showRejectDialog(context, app.applicationId, app.userId),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.red,
                   side: const BorderSide(color: Colors.red),
@@ -165,7 +177,8 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
               ),
               const SizedBox(width: 12),
               FilledButton(
-                onPressed: () => _approveApplication(app.applicationId, app.userId),
+                onPressed: () =>
+                    _approveApplication(app.applicationId, app.userId),
                 child: const Text('Approve'),
               ),
             ],
@@ -185,9 +198,9 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         ...items.map((item) {
@@ -219,14 +232,18 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
 
-  void _showRejectDialog(BuildContext context, String applicationId) {
+  void _showRejectDialog(
+    BuildContext context,
+    String applicationId,
+    String userId,
+  ) {
     final reasonController = TextEditingController();
     showDialog(
       context: context,
@@ -247,7 +264,7 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
           ),
           FilledButton(
             onPressed: () {
-              _rejectApplication(applicationId, reasonController.text);
+              _rejectApplication(applicationId, userId, reasonController.text);
               Navigator.pop(context);
             },
             child: const Text('Reject'),
@@ -257,20 +274,59 @@ class _ArtistVerificationScreenState extends State<ArtistVerificationScreen> {
     );
   }
 
-  Future<void> _rejectApplication(String applicationId, String reason) async {
+  Future<void> _rejectApplication(
+    String applicationId,
+    String userId,
+    String reason,
+  ) async {
     try {
-      await _adminRepository.rejectArtistApplication(applicationId, '', reason);
+      await _adminRepository.rejectArtistApplication(
+        applicationId,
+        userId,
+        reason,
+      );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Application rejected')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Application rejected')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
+  }
+}
+
+class _ApplicationImage extends StatelessWidget {
+  const _ApplicationImage({required this.source});
+
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    if (source.startsWith('data:image/')) {
+      final bytes = Uint8List.fromList(UriData.parse(source).contentAsBytes());
+      return Image.memory(
+        bytes,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _imageFallback(),
+      );
+    }
+
+    return Image.network(
+      source,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => _imageFallback(),
+    );
+  }
+
+  Widget _imageFallback() {
+    return Container(
+      color: Colors.grey[200],
+      child: const Icon(Icons.image_not_supported),
+    );
   }
 }

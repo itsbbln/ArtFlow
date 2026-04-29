@@ -1,0 +1,211 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isAdminEmail() {
+      return signedIn() && (
+        request.auth.token.email == 'adminpageturner@gmail.com' ||
+        request.auth.token.email == 'adminpageturener@gmail.com' ||
+        request.auth.token.email == 'admin@artflow.app'
+      );
+    }
+
+    function isAdmin() {
+      return isAdminEmail() || (
+        signedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    function isArtist() {
+      return signedIn() && (
+        isAdmin() ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'artist'
+        )
+      );
+    }
+
+    function userRoleTransitionAllowed() {
+      return request.resource.data.role == resource.data.role ||
+        (
+          resource.data.role == 'buyer' &&
+          request.resource.data.role == 'artist'
+        );
+    }
+
+    function userSelfUpdateAllowed(uid) {
+      return isOwner(uid) &&
+        request.resource.data.uid == resource.data.uid &&
+        request.resource.data.email == resource.data.email &&
+        request.resource.data.isVerified == resource.data.isVerified &&
+        request.resource.data.isScholarVerified == resource.data.isScholarVerified &&
+        userRoleTransitionAllowed();
+    }
+
+    function isArtworkOwner() {
+      return signedIn() &&
+        request.auth.uid == resource.data.artistId;
+    }
+
+    function isArtworkOwnerOnCreate() {
+      return signedIn() &&
+        request.resource.data.artistId == request.auth.uid;
+    }
+
+    function isCommissionParticipant() {
+      return signedIn() && (
+        resource.data.clientId == request.auth.uid ||
+        resource.data.artistId == request.auth.uid
+      );
+    }
+
+    function isCommissionOwnerOnCreate() {
+      return signedIn() &&
+        request.resource.data.clientId == request.auth.uid &&
+        request.resource.data.artistId is string &&
+        request.resource.data.artistId != '';
+    }
+
+    function isOrderParticipant() {
+      return signedIn() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.artistId == request.auth.uid
+      );
+    }
+
+    function isOrderOwnerOnCreate() {
+      return signedIn() &&
+        request.resource.data.buyerId == request.auth.uid &&
+        request.resource.data.artistId is string &&
+        request.resource.data.artistId != '';
+    }
+
+    function artistApplicationOwner(applicationId) {
+      return signedIn() &&
+        applicationId == request.auth.uid;
+    }
+
+    function isTransactionParticipant() {
+      return signedIn() && (
+        resource.data.buyerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid
+      );
+    }
+
+    function isTransactionOwnerOnCreate() {
+      return signedIn() &&
+        request.resource.data.buyerId == request.auth.uid &&
+        request.resource.data.sellerId is string &&
+        request.resource.data.sellerId != '';
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn();
+
+      allow create: if isOwner(uid) && (
+        (
+          request.resource.data.role == 'buyer' &&
+          request.resource.data.uid == uid &&
+          request.resource.data.email == request.auth.token.email &&
+          request.resource.data.isVerified == false &&
+          request.resource.data.isScholarVerified == false
+        ) ||
+        (
+          isAdminEmail() &&
+          request.resource.data.role == 'admin' &&
+          request.resource.data.uid == uid
+        )
+      );
+
+      allow update: if isAdmin() || userSelfUpdateAllowed(uid);
+      allow delete: if isAdmin();
+    }
+
+    match /artworks/{artworkId} {
+      allow read: if signedIn();
+      allow create: if isArtist() && isArtworkOwnerOnCreate();
+      allow update, delete: if isAdmin() || isArtworkOwner();
+    }
+
+    match /commissions/{commissionId} {
+      allow read: if isAdmin() || isCommissionParticipant();
+      allow create: if isAdmin() || isCommissionOwnerOnCreate();
+      allow update: if isAdmin() || isCommissionParticipant();
+      allow delete: if isAdmin();
+    }
+
+    match /orders/{orderId} {
+      allow read: if isAdmin() || isOrderParticipant();
+      allow create: if isAdmin() || isOrderOwnerOnCreate();
+      allow update: if isAdmin() || isOrderParticipant();
+      allow delete: if isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+
+      // Kept permissive for authenticated creates because the current app writes
+      // partner notifications directly from the client. Tighten this later by
+      // moving notification fan-out to Cloud Functions or another trusted server path.
+      allow create: if signedIn();
+
+      allow update: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isAdmin() || (signedIn() && resource.data.authorId == request.auth.uid);
+    }
+
+    match /artistApplications/{applicationId} {
+      allow read: if isAdmin() || artistApplicationOwner(applicationId);
+
+      allow create: if isAdmin() || (
+        artistApplicationOwner(applicationId) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == 'pending'
+      );
+
+      allow update: if isAdmin() || (
+        artistApplicationOwner(applicationId) &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.status == 'pending' &&
+        (
+          resource.data.status == 'pending' ||
+          resource.data.status == 'rejected'
+        )
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    match /transactions/{transactionId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() || isTransactionOwnerOnCreate();
+      allow update: if isAdmin() || isTransactionParticipant();
+      allow delete: if isAdmin();
+    }
+
+    match /disputes/{disputeId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /platformSettings/{settingId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+  }
+}

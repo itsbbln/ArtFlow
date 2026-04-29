@@ -1,4 +1,4 @@
-name: artflow_flutter
+name: ArtFlow
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -40,9 +40,13 @@ dependencies:
   google_fonts: ^8.0.2
   image_picker: ^1.2.1
   shared_preferences: ^2.2.2
+  flutter_dotenv: ^6.0.0
+  supabase_flutter: ^2.12.2
   firebase_core: ^3.10.1
   cloud_firestore: ^5.6.2
   firebase_auth: ^5.5.1
+  firebase_database: ^11.3.3
+  google_sign_in: ^6.3.0
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +58,20 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  web:
+    generate: true
+  windows:
+    generate: true
+  macos:
+    generate: true
+  image_path: assets/images/artflow_logo.png
+  min_sdk_android: 21
+  remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -66,6 +84,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - .env
     - assets/images/artflow_logo.png
     - assets/images/bukidnon_artists_logo.png
     - assets/images/artizan_logo.png

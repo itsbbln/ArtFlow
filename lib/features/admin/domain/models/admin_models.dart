@@ -46,11 +46,7 @@ class AdminUserInfo {
   });
 }
 
-enum UserAccountType {
-  buyer,
-  artistPending,
-  artistVerified,
-}
+enum UserAccountType { buyer, artistPending, artistVerified }
 
 // Artist Verification Models
 class ArtistVerificationApplication {
@@ -61,6 +57,7 @@ class ArtistVerificationApplication {
   final String bio;
   final String artStyle;
   final String medium;
+  final String experience;
   final List<String> sampleArtworks;
   final String identityVerificationUrl;
   final DateTime submittedDate;
@@ -74,6 +71,7 @@ class ArtistVerificationApplication {
     required this.bio,
     required this.artStyle,
     required this.medium,
+    required this.experience,
     required this.sampleArtworks,
     required this.identityVerificationUrl,
     required this.submittedDate,
@@ -81,11 +79,7 @@ class ArtistVerificationApplication {
   });
 }
 
-enum ApplicationStatus {
-  pending,
-  approved,
-  rejected,
-}
+enum ApplicationStatus { pending, approved, rejected }
 
 // Artwork Moderation Models
 class ArtworkForModeration {
@@ -112,12 +106,7 @@ class ArtworkForModeration {
   });
 }
 
-enum ModerationStatus {
-  pending,
-  approved,
-  hidden,
-  removed,
-}
+enum ModerationStatus { pending, approved, hidden, removed }
 
 // Transaction Monitoring Models
 class TransactionRecord {
@@ -144,12 +133,7 @@ class TransactionRecord {
   });
 }
 
-enum EscrowStatus {
-  held,
-  released,
-  disputed,
-  refunded,
-}
+enum EscrowStatus { held, released, disputed, refunded }
 
 // Dispute Management Models
 class DisputeCase {
@@ -178,12 +162,7 @@ class DisputeCase {
   });
 }
 
-enum DisputeStatus {
-  open,
-  inReview,
-  resolved,
-  closed,
-}
+enum DisputeStatus { open, inReview, resolved, closed }
 
 // Analytics Models
 class SalesAnalytics {

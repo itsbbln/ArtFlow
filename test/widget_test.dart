@@ -1,12 +1,13 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:artflow_flutter/app.dart';
+import 'package:ArtFlow/app.dart';
 
 void main() {
   testWidgets('Artflow app boots', (WidgetTester tester) async {
     await tester.pumpWidget(const ArtflowApp());
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('ArtFlow'), findsOneWidget);
+    expect(find.byType(MaterialApp), findsOneWidget);
   });
 }

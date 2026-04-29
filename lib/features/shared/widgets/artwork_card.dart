@@ -123,11 +123,34 @@ class _ArtworkCardState extends State<ArtworkCard> {
                         ),
                       ),
                     ),
+                  if (widget.artwork.isAuction)
+                    Positioned(
+                      bottom: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.72),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: const Text(
+                          'Auction',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -144,7 +167,7 @@ class _ArtworkCardState extends State<ArtworkCard> {
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   Row(
                     children: [
                       Expanded(
@@ -167,9 +190,13 @@ class _ArtworkCardState extends State<ArtworkCard> {
                           color: Color(0xFFE3BC2D),
                         ),
                         const SizedBox(width: 2),
-                        Text(
-                          widget.artwork.avgRating.toStringAsFixed(1),
-                          style: Theme.of(context).textTheme.bodySmall,
+                        Flexible(
+                          child: Text(
+                            widget.artwork.avgRating.toStringAsFixed(1),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                         ),
                       ],
                     ],

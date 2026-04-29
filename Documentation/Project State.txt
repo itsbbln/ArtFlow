@@ -1,0 +1,323 @@
+PROJECT STATE
+
+Project name:
+ArtFlow
+
+Project type:
+Flutter multi-platform application for an art marketplace and creative community.
+
+Current repository snapshot date:
+2026-04-29
+
+Top-level directories:
+android
+assets
+build
+Documentation
+ios
+lib
+linux
+macos
+test
+web
+windows
+
+Top-level important files:
+.env
+.env.example
+firestore.rules
+pubspec.yaml
+README.md
+TODO.md
+ADMIN_MODULE_GUIDE.md
+ADMIN_MODULE_IMPLEMENTATION.md
+AUTHENTICATION_IMPLEMENTATION.md
+DESIGN_SYSTEM.md
+IMPLEMENTATION_SUMMARY.md
+INTEGRATION_GUIDE.md
+
+Primary dependencies in use:
+flutter
+go_router
+provider
+intl
+google_fonts
+image_picker
+shared_preferences
+flutter_dotenv
+supabase_flutter
+firebase_core
+cloud_firestore
+firebase_auth
+firebase_database
+google_sign_in
+
+Application entry flow:
+main.dart initializes Flutter bindings, attempts to load .env, initializes Firebase, optionally initializes Supabase if environment values are present, and then launches ArtflowApp.
+
+Global app composition:
+app.dart creates and provides AuthState and AppDataState, synchronizes shared app data after auth changes, applies the global theme, and attaches the router.
+
+Main source structure under lib:
+core
+features/admin
+features/artworks
+features/auth
+features/chat
+features/entities
+features/payments
+features/screens
+features/shared
+
+Core layer details:
+lib/core/navigation/app_router.dart
+Contains route definitions, auth redirects, role-based access checks, and shell-wrapped in-app navigation.
+
+lib/core/theme/app_theme.dart
+Defines the shared visual theme for the app.
+
+lib/core/widgets/app_scaffold.dart
+Provides the main in-app scaffold, navigation shell, unread notification display, and role-aware menu behavior.
+
+Authentication implementation:
+Email/password sign-in is implemented.
+Email/password registration is implemented.
+Google sign-in is implemented.
+Auth session checking is implemented.
+Sign-out is implemented.
+Welcome completion is stored using SharedPreferences.
+User role handling is implemented for buyer, artist, and admin.
+AuthState listens to the current user document in Firestore and updates profile, verification, and role data reactively.
+Artist application state is watched in real time.
+Friendly auth error mapping is implemented.
+
+Auth-related files:
+lib/features/auth/data/auth_service.dart
+lib/features/auth/presentation/auth_state.dart
+lib/features/auth/domain/auth_status.dart
+lib/features/auth/domain/artist_application.dart
+
+Profile and verification support:
+Persisted profile saving is implemented for display name, username, bio, photo URL, and premium-style toggles.
+Scholar verification submission is implemented by updating the user record with school ID media data.
+Artist application submission is implemented with bio, style, medium, experience, sample artworks, and optional identity verification media.
+
+Shared application data layer:
+lib/features/shared/data/app_data_service.dart is the main Firestore-backed service for marketplace data.
+lib/features/shared/data/app_data_state.dart is the provider-facing state wrapper that subscribes to artworks, commissions, orders, and notifications.
+
+Firestore collections actively used in code:
+users
+artworks
+commissions
+orders
+notifications
+reviews
+transactions
+artistApplications
+
+Shared data features currently implemented:
+Artwork streaming and fetch by id
+Artwork create or update
+Artwork delete
+Artwork sold flag updates
+Artwork view counting
+Artwork inquiry counting
+Commission creation
+Commission status updates
+Order creation
+Order status updates
+Notification creation
+Notification streaming
+Notification mark-all-read
+Review creation
+Artist average rating calculation
+Chat contact lookup from users
+Conversation status mapping for UI
+
+Artwork categories currently defined in code:
+all
+painting
+digital
+crafts
+sculpture
+photography
+textile
+mixed_media
+illustration
+
+Chat implementation:
+Chat uses Firebase Realtime Database, not Firestore.
+lib/features/chat/data/chat_service.dart manages conversation creation, thread previews, message streaming, sending messages, participant metadata, unread counts, and read markers.
+
+Realtime Database paths used:
+chat_threads
+chat_messages
+chat_user_threads
+
+Admin implementation:
+The admin area exists as a dedicated feature module with repository, models, screens, scaffold, and widgets.
+
+Main admin files:
+lib/features/admin/data/repositories/admin_repository.dart
+lib/features/admin/domain/models/admin_models.dart
+lib/features/admin/presentation/admin_scaffold.dart
+lib/features/admin/presentation/screens/admin_dashboard_screen.dart
+lib/features/admin/presentation/screens/user_management_screen.dart
+lib/features/admin/presentation/screens/artist_verification_screen.dart
+lib/features/admin/presentation/screens/artwork_moderation_screen.dart
+lib/features/admin/presentation/screens/transaction_monitoring_screen.dart
+lib/features/admin/presentation/screens/dispute_management_screen.dart
+lib/features/admin/presentation/screens/analytics_screen.dart
+lib/features/admin/presentation/screens/platform_settings_screen.dart
+lib/features/admin/presentation/screens/admin_profile_screen.dart
+
+Admin capabilities currently present in code:
+Platform stats retrieval
+Pending artist application count
+User listing and detail lookup
+User suspend, ban, and reactivate actions
+Pending artist application streaming
+Artist application approve and reject actions
+Artwork moderation listing
+Flagged artwork listing
+Artwork approve, hide, and remove actions
+Transaction monitoring stream
+Dispute listing stream
+Dispute resolve and close actions
+Platform settings fetch and update methods
+
+Admin maturity note:
+Some admin data is live from Firestore, while some analytics, category, region, and summary values are still simulated or default-backed.
+
+Payments implementation:
+Payments are currently mock-based.
+lib/features/payments/data/mock_payment_gateway.dart simulates checkout success.
+lib/features/payments/presentation/checkout_screen.dart implements a multi-step checkout flow.
+lib/features/payments/presentation/payment_success_screen.dart handles the success destination after mock payment completion.
+
+Current checkout flow:
+Contact step
+Delivery step
+Payment step
+Mock authorization
+Order creation in Firestore
+Transaction record creation for admin monitoring
+Redirect to success screen
+
+Image and storage implementation:
+Supabase storage upload support is implemented through lib/features/shared/data/supabase_image_service.dart.
+
+Supported upload types:
+Profile images
+Artwork images
+Artist application images
+Scholar verification images
+
+Supabase environment values expected by the code:
+SUPABASE_URL
+SUPABASE_ANON_KEY
+SUPABASE_STORAGE_BUCKET
+SUPABASE_PROFILE_FOLDER
+SUPABASE_ARTWORK_FOLDER
+SUPABASE_ARTIST_APPLICATION_FOLDER
+SUPABASE_SCHOLAR_FOLDER
+
+Entity models currently present:
+lib/features/entities/models/artwork.dart
+lib/features/entities/models/commission.dart
+lib/features/entities/models/message_item.dart
+lib/features/entities/models/notification_item.dart
+lib/features/entities/models/order.dart
+lib/features/entities/models/review.dart
+
+Screen layer status:
+The user-facing screen layer is heavily concentrated in lib/features/screens/screens.dart.
+This file currently includes the main marketplace and account screens such as splash, register, onboarding, home, artist dashboard, explore, artwork detail, create artwork, profile, edit profile, messages, chat, commissions, orders, payments, notifications, artist profile, search, admin entry, and not found handling.
+The file size is currently about 200156 bytes, which makes it one of the main maintainability hotspots in the repository.
+
+Additional standalone screen files:
+lib/features/screens/welcome_screen.dart
+lib/features/screens/become_artist_screen.dart
+lib/features/screens/scholar_verification_screen.dart
+
+Routing summary:
+Unauthenticated users are limited to splash, welcome, register, onboarding, and verification-related routes.
+Authenticated admins are redirected toward /admin.
+Verified artists are allowed to access create and artist dashboard routes.
+Non-artist users are blocked from artwork creation routes.
+Checkout and payment success routes are implemented.
+
+Implemented user-facing flows confirmed in code:
+Welcome flow
+Register and login flow
+Buyer onboarding flow
+Artist onboarding flow
+Home feed and artwork browsing
+Artwork detail viewing
+Artwork creation and editing route support
+Profile viewing and editing
+Become artist flow
+Scholar verification submission flow
+Messaging list and individual chat flow
+Commission request flow
+Commission listing and status flow
+Order listing and status flow
+Notifications flow
+Artist profile viewing
+Search flow
+Admin access flow
+Mock checkout and payment success flow
+
+Backend and state architecture summary:
+Provider with ChangeNotifier is the main app state pattern.
+AuthState handles session, profile, role, and verification state.
+AppDataState handles shared marketplace data and user-bound streams.
+AuthService handles auth and user-related persistence.
+AppDataService handles Firestore marketplace data.
+ChatService handles realtime messaging.
+AdminRepository handles admin operations.
+
+Security and backend notes:
+firestore.rules exists in the repository and covers users, artworks, commissions, orders, notifications, reviews, transactions, disputes, artist applications, and platform settings.
+The project currently creates some cross-user notifications directly from the client, which works for the current app flow but should eventually move to trusted backend logic for stronger production security.
+
+Testing status:
+The test directory exists, but automated test coverage is still small compared with the size of the application.
+
+Documentation already present:
+Documentation/PROJECT_STRUCTURE.md
+Documentation/supabase_storage_policies.sql
+Documentation/Artflow .pdf
+Root-level implementation and guide markdown files for admin, authentication, design system, and integration
+
+Current strengths:
+Role-based navigation is in place.
+Firebase-backed marketplace data flow is implemented.
+Realtime chat is separated into its own service.
+Supabase media upload support is wired in.
+Admin module coverage is broad.
+Mock checkout already creates orders and transaction records.
+Profile persistence and verification-related flows are implemented.
+
+Current weaknesses or incomplete areas:
+Real payment provider integration is not implemented yet.
+Large parts of the screen layer are still consolidated into one very large file.
+Some admin analytics and platform settings content are still simulated or default-backed.
+Dispute creation from buyer and artist flows is still not fully wired.
+Media cleanup, upload progress, and richer asset management are still limited.
+Automated test coverage is still light.
+
+Files that are especially important for understanding the project quickly:
+lib/main.dart
+lib/app.dart
+lib/core/navigation/app_router.dart
+lib/features/auth/presentation/auth_state.dart
+lib/features/shared/data/app_data_state.dart
+lib/features/shared/data/app_data_service.dart
+lib/features/chat/data/chat_service.dart
+lib/features/admin/data/repositories/admin_repository.dart
+lib/features/screens/screens.dart
+
+Overall current state:
+The project is already functioning as a Firebase-backed Flutter marketplace application with buyer, artist, and admin flows. Authentication, profile persistence, artist application handling, realtime chat, artwork management, commissions, orders, notifications, mock checkout, and a broad admin module are present. The biggest next improvements would be splitting the large screen file, replacing the mock payment flow with a real provider, strengthening backend-driven security behaviors, and expanding automated test coverage.

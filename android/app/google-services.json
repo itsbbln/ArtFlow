@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "577596756711",
+    "firebase_url": "https://artflow-b5709-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "artflow-b5709",
     "storage_bucket": "artflow-b5709.firebasestorage.app"
   },
@@ -13,6 +14,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "577596756711-m6k9ds39dncothusk60vtk89gg49n1jm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.artflow_flutter",
+            "certificate_hash": "a2850f899e1587e705d9eb1d04bad93aacd16219"
+          }
+        },
         {
           "client_id": "577596756711-4tk7bnnpt0411k9ncir1jmnc53kn36mi.apps.googleusercontent.com",
           "client_type": 3

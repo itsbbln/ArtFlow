@@ -7,7 +7,7 @@ class AdminRepository {
   final FirebaseFirestore _firestore;
 
   AdminRepository({FirebaseFirestore? firestore})
-      : _firestore = firestore ?? FirebaseFirestore.instance;
+    : _firestore = firestore ?? FirebaseFirestore.instance;
 
   // ============ DASHBOARD ============
   /// Fetch platform statistics
@@ -26,7 +26,9 @@ class AdminRepository {
       final verifiedArtists = artistsSnapshot.docs.length;
 
       // Get transactions count (simulated)
-      final transactionsSnapshot = await _firestore.collection('transactions').get();
+      final transactionsSnapshot = await _firestore
+          .collection('transactions')
+          .get();
       final totalTransactions = transactionsSnapshot.docs.length;
 
       // Get active auctions count
@@ -82,7 +84,9 @@ class AdminRepository {
 
         UserAccountType accountType;
         if (role == 'artist') {
-          accountType = isVerified ? UserAccountType.artistVerified : UserAccountType.artistPending;
+          accountType = isVerified
+              ? UserAccountType.artistVerified
+              : UserAccountType.artistPending;
         } else {
           accountType = UserAccountType.buyer;
         }
@@ -92,7 +96,8 @@ class AdminRepository {
           displayName: data['displayName'] as String? ?? 'Unknown',
           email: data['email'] as String? ?? '',
           accountType: accountType,
-          registeredDate: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          registeredDate:
+              (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
           status: data['status'] as String? ?? 'Active',
           activityLog: List<String>.from(data['activityLog'] as List? ?? []),
           isVerified: isVerified,
@@ -115,7 +120,9 @@ class AdminRepository {
 
       UserAccountType accountType;
       if (role == 'artist') {
-        accountType = isVerified ? UserAccountType.artistVerified : UserAccountType.artistPending;
+        accountType = isVerified
+            ? UserAccountType.artistVerified
+            : UserAccountType.artistPending;
       } else {
         accountType = UserAccountType.buyer;
       }
@@ -125,7 +132,8 @@ class AdminRepository {
         displayName: data['displayName'] as String? ?? 'Unknown',
         email: data['email'] as String? ?? '',
         accountType: accountType,
-        registeredDate: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+        registeredDate:
+            (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
         status: data['status'] as String? ?? 'Active',
         activityLog: List<String>.from(data['activityLog'] as List? ?? []),
         isVerified: isVerified,
@@ -169,34 +177,48 @@ class AdminRepository {
         .where('status', isEqualTo: 'pending')
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return ArtistVerificationApplication(
-          applicationId: doc.id,
-          userId: data['userId'] as String? ?? '',
-          displayName: data['displayName'] as String? ?? '',
-          email: data['email'] as String? ?? '',
-          bio: data['bio'] as String? ?? '',
-          artStyle: data['artStyle'] as String? ?? '',
-          medium: data['medium'] as String? ?? '',
-          sampleArtworks: List<String>.from(data['sampleArtworks'] as List? ?? []),
-          identityVerificationUrl: data['identityVerification'] as String? ?? '',
-          submittedDate: (data['submittedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-          status: ApplicationStatus.pending,
-        );
-      }).toList();
-    });
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            return ArtistVerificationApplication(
+              applicationId: doc.id,
+              userId: data['userId'] as String? ?? '',
+              displayName: data['displayName'] as String? ?? '',
+              email: data['email'] as String? ?? '',
+              bio: data['bio'] as String? ?? '',
+              artStyle: data['artStyle'] as String? ?? '',
+              medium: data['medium'] as String? ?? '',
+              experience: data['experience'] as String? ?? '',
+              sampleArtworks: List<String>.from(
+                data['sampleArtworks'] as List? ?? [],
+              ),
+              identityVerificationUrl:
+                  data['identityVerification'] as String? ?? '',
+              submittedDate:
+                  (data['submittedAt'] as Timestamp?)?.toDate() ??
+                  DateTime.now(),
+              status: ApplicationStatus.pending,
+            );
+          }).toList();
+        });
   }
 
   /// Approve artist application
-  Future<void> approveArtistApplication(String applicationId, String userId) async {
+  Future<void> approveArtistApplication(
+    String applicationId,
+    String userId,
+  ) async {
     await Future.wait([
       _firestore.collection('artistApplications').doc(applicationId).update({
         'status': 'approved',
         'approvedAt': FieldValue.serverTimestamp(),
+        'reviewedAt': FieldValue.serverTimestamp(),
+        'rejectionReason': '',
       }),
       _firestore.collection('users').doc(userId).update({
         'isVerified': true,
+        'verificationSubmitted': false,
+        'artistApplicationStatus': 'approved',
+        'role': 'artist',
         'verifiedAt': FieldValue.serverTimestamp(),
       }),
     ]);
@@ -208,11 +230,21 @@ class AdminRepository {
     String userId,
     String rejectionReason,
   ) async {
-    await _firestore.collection('artistApplications').doc(applicationId).update({
-      'status': 'rejected',
-      'rejectionReason': rejectionReason,
-      'rejectedAt': FieldValue.serverTimestamp(),
-    });
+    await Future.wait([
+      _firestore.collection('artistApplications').doc(applicationId).update({
+        'status': 'rejected',
+        'rejectionReason': rejectionReason,
+        'rejectedAt': FieldValue.serverTimestamp(),
+        'reviewedAt': FieldValue.serverTimestamp(),
+      }),
+      _firestore.collection('users').doc(userId).update({
+        'isVerified': false,
+        'verificationSubmitted': false,
+        'artistApplicationStatus': 'rejected',
+        'role': 'buyer',
+        'updatedAt': FieldValue.serverTimestamp(),
+      }),
+    ]);
   }
 
   // ============ ARTWORK MODERATION ============
@@ -221,15 +253,20 @@ class AdminRepository {
     return _firestore.collection('artworks').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        final status = _parseModerationStatus(data['moderationStatus'] as String?);
+        final status = _parseModerationStatus(
+          data['moderationStatus'] as String?,
+        );
 
         return ArtworkForModeration(
           artworkId: doc.id,
           title: data['title'] as String? ?? 'Unknown',
           artistName: data['artistName'] as String? ?? 'Unknown',
           imageUrl: data['imageUrl'] as String? ?? '',
-          uploadedDate: (data['uploadedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-          reportedIssues: List<String>.from(data['reportedIssues'] as List? ?? []),
+          uploadedDate:
+              (data['uploadedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          reportedIssues: List<String>.from(
+            data['reportedIssues'] as List? ?? [],
+          ),
           reportCount: (data['reportCount'] as num?)?.toInt() ?? 0,
           status: status,
           description: data['description'] as String? ?? '',
@@ -245,23 +282,29 @@ class AdminRepository {
         .where('reportCount', isGreaterThan: 0)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        final status = _parseModerationStatus(data['moderationStatus'] as String?);
+          return snapshot.docs.map((doc) {
+            final data = doc.data();
+            final status = _parseModerationStatus(
+              data['moderationStatus'] as String?,
+            );
 
-        return ArtworkForModeration(
-          artworkId: doc.id,
-          title: data['title'] as String? ?? 'Unknown',
-          artistName: data['artistName'] as String? ?? 'Unknown',
-          imageUrl: data['imageUrl'] as String? ?? '',
-          uploadedDate: (data['uploadedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-          reportedIssues: List<String>.from(data['reportedIssues'] as List? ?? []),
-          reportCount: (data['reportCount'] as num?)?.toInt() ?? 0,
-          status: status,
-          description: data['description'] as String? ?? '',
-        );
-      }).toList();
-    });
+            return ArtworkForModeration(
+              artworkId: doc.id,
+              title: data['title'] as String? ?? 'Unknown',
+              artistName: data['artistName'] as String? ?? 'Unknown',
+              imageUrl: data['imageUrl'] as String? ?? '',
+              uploadedDate:
+                  (data['uploadedAt'] as Timestamp?)?.toDate() ??
+                  DateTime.now(),
+              reportedIssues: List<String>.from(
+                data['reportedIssues'] as List? ?? [],
+              ),
+              reportCount: (data['reportCount'] as num?)?.toInt() ?? 0,
+              status: status,
+              description: data['description'] as String? ?? '',
+            );
+          }).toList();
+        });
   }
 
   /// Hide artwork (remove from public view)
@@ -294,7 +337,9 @@ class AdminRepository {
     return _firestore.collection('transactions').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         final data = doc.data();
-        final escrowStatus = _parseEscrowStatus(data['escrowStatus'] as String?);
+        final escrowStatus = _parseEscrowStatus(
+          data['escrowStatus'] as String?,
+        );
 
         return TransactionRecord(
           transactionId: doc.id,
@@ -303,7 +348,8 @@ class AdminRepository {
           sellerName: data['sellerName'] as String? ?? 'Unknown',
           amount: (data['amount'] as num?)?.toDouble() ?? 0,
           platformFee: (data['platformFee'] as num?)?.toDouble() ?? 0,
-          transactionDate: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          transactionDate:
+              (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
           escrowStatus: escrowStatus,
           artworkTitle: data['artworkTitle'] as String? ?? 'Unknown',
         );
@@ -327,7 +373,8 @@ class AdminRepository {
           title: data['title'] as String? ?? 'Unknown',
           description: data['description'] as String? ?? '',
           chatHistory: List<String>.from(data['chatHistory'] as List? ?? []),
-          createdDate: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          createdDate:
+              (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
           status: status,
           resolution: data['resolution'] as String? ?? '',
         );
@@ -357,16 +404,16 @@ class AdminRepository {
   Future<SalesAnalytics> getSalesAnalytics() async {
     try {
       // Fetch transactions for trend
-      final transactionSnapshot = await _firestore.collection('transactions').get();
-      final salesTrend = transactionSnapshot.docs
-          .map((doc) {
-            final data = doc.data();
-            return SalesTrendPoint(
-              date: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
-              amount: (data['amount'] as num?)?.toDouble() ?? 0,
-            );
-          })
-          .toList();
+      final transactionSnapshot = await _firestore
+          .collection('transactions')
+          .get();
+      final salesTrend = transactionSnapshot.docs.map((doc) {
+        final data = doc.data();
+        return SalesTrendPoint(
+          date: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+          amount: (data['amount'] as num?)?.toDouble() ?? 0,
+        );
+      }).toList();
 
       // Category popularity (simulated)
       final categoryMap = <String, int>{
@@ -431,7 +478,10 @@ class AdminRepository {
   /// Get platform settings
   Future<PlatformSettings> getPlatformSettings() async {
     try {
-      final doc = await _firestore.collection('platformSettings').doc('main').get();
+      final doc = await _firestore
+          .collection('platformSettings')
+          .doc('main')
+          .get();
 
       if (!doc.exists) {
         return _getDefaultSettings();
@@ -442,8 +492,16 @@ class AdminRepository {
 
       final categories = [
         ArtCategory(id: 'digital', name: 'Digital Art', style: 'Digital'),
-        ArtCategory(id: 'traditional', name: 'Traditional Art', style: 'Traditional'),
-        ArtCategory(id: 'photography', name: 'Photography', style: 'Photography'),
+        ArtCategory(
+          id: 'traditional',
+          name: 'Traditional Art',
+          style: 'Traditional',
+        ),
+        ArtCategory(
+          id: 'photography',
+          name: 'Photography',
+          style: 'Photography',
+        ),
         ArtCategory(id: 'sculpture', name: 'Sculpture', style: 'Sculpture'),
       ];
 
@@ -455,7 +513,9 @@ class AdminRepository {
       ];
 
       return PlatformSettings(
-        platformFeePercentage: (data['feePercentage'] as num?)?.toDouble() ?? platformFeePercentage,
+        platformFeePercentage:
+            (data['feePercentage'] as num?)?.toDouble() ??
+            platformFeePercentage,
         categories: categories,
         regions: regions,
         notificationsEnabled: data['notificationsEnabled'] as bool? ?? true,
@@ -541,8 +601,16 @@ class AdminRepository {
       platformFeePercentage: 5.0,
       categories: [
         ArtCategory(id: 'digital', name: 'Digital Art', style: 'Digital'),
-        ArtCategory(id: 'traditional', name: 'Traditional Art', style: 'Traditional'),
-        ArtCategory(id: 'photography', name: 'Photography', style: 'Photography'),
+        ArtCategory(
+          id: 'traditional',
+          name: 'Traditional Art',
+          style: 'Traditional',
+        ),
+        ArtCategory(
+          id: 'photography',
+          name: 'Photography',
+          style: 'Photography',
+        ),
         ArtCategory(id: 'sculpture', name: 'Sculpture', style: 'Sculpture'),
       ],
       regions: [

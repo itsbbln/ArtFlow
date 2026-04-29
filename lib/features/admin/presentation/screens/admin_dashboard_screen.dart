@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../data/repositories/admin_repository.dart';
 import '../../domain/models/admin_models.dart';
 import '../widgets/admin_widgets.dart';
@@ -9,7 +10,8 @@ import 'transaction_monitoring_screen.dart';
 import 'dispute_management_screen.dart';
 import 'analytics_screen.dart';
 import 'platform_settings_screen.dart';
-import '../../../shared/data/mock_seeder.dart';
+import '../../../auth/presentation/auth_state.dart';
+import '../../../shared/data/app_data_state.dart';
 
 /// Main Admin Dashboard Screen
 class AdminDashboardScreen extends StatefulWidget {
@@ -285,10 +287,15 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen>
 
   /// Show notification when there are pending verifications
   void _showPendingVerificationNotification(int pendingCount) {
-    // Add admin notification
-    MockSeeder.addNotification(
-      '🔔 Pending Verifications',
-      '$pendingCount artists/users awaiting verification. Review in the Artist Verification tab.',
-    );
+    final userId = context.read<AuthState>().currentUserId;
+    if (userId == null) {
+      return;
+    }
+    context.read<AppDataState>().addNotification(
+          userId: userId,
+          title: 'Pending Verifications',
+          body:
+              '$pendingCount artists/users awaiting verification. Review in the Artist Verification tab.',
+        );
   }
 }

@@ -23,9 +23,9 @@ GoRouter createRouter(AuthState authState) {
         '/verification',
       };
 
-      if (authState.status == AuthStatus.checking && 
-          path != '/register' && 
-          path != '/splash' && 
+      if (authState.status == AuthStatus.checking &&
+          path != '/register' &&
+          path != '/splash' &&
           path != '/welcome') {
         return '/register';
       }
@@ -38,7 +38,11 @@ GoRouter createRouter(AuthState authState) {
 
       if (authState.status == AuthStatus.authenticated) {
         // If they are an admin, redirect them to the admin dashboard if they are on entry pages
-        if (authState.isAdmin && (path == '/register' || path == '/welcome' || path == '/splash' || path == '/')) {
+        if (authState.isAdmin &&
+            (path == '/register' ||
+                path == '/welcome' ||
+                path == '/splash' ||
+                path == '/')) {
           return '/admin';
         }
 
@@ -46,9 +50,10 @@ GoRouter createRouter(AuthState authState) {
         if (path == '/register' || path == '/welcome' || path == '/splash') {
           return '/';
         }
-        
+
         // If they are already a verified artist, don't let them go to onboarding again
-        if (authState.isVerifiedArtist && (path == '/onboarding/artist' || path == '/become-artist')) {
+        if (authState.isVerifiedArtist &&
+            (path == '/onboarding/artist' || path == '/become-artist')) {
           return '/artist-dashboard';
         }
       }
@@ -58,7 +63,8 @@ GoRouter createRouter(AuthState authState) {
       }
 
       if ((path == '/create' || path.startsWith('/create/')) &&
-          !authState.isVerified && !authState.isAdmin) {
+          !authState.isVerified &&
+          !authState.isAdmin) {
         return '/';
       }
 
@@ -142,6 +148,7 @@ GoRouter createRouter(AuthState authState) {
             builder: (_, _) => const CommissionsScreen(),
           ),
           GoRoute(path: '/orders', builder: (_, _) => const OrdersScreen()),
+          GoRoute(path: '/auctions', builder: (_, _) => const AuctionsScreen()),
           GoRoute(
             path: '/notifications',
             builder: (_, _) => const NotificationsScreen(),

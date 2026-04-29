@@ -8,13 +8,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../data/auth_service.dart';
 import '../domain/artist_application.dart';
 import '../domain/auth_status.dart';
+import '../../social/follow_service.dart';
 
 enum UserRole { buyer, artist, admin }
 
 class AuthState extends ChangeNotifier {
-  AuthState({AuthService? service}) : _service = service ?? AuthService();
+  AuthState({
+    AuthService? service,
+    FollowService? followService,
+  })  : _service = service ?? AuthService(),
+        _followService = followService ?? FollowService();
 
   final AuthService _service;
+  final FollowService _followService;
 
   AuthStatus _status = AuthStatus.checking;
   AuthStatus get status => _status;
@@ -24,6 +30,10 @@ class AuthState extends ChangeNotifier {
   String _photoUrl = '';
   String _bio = '';
   String _style = '';
+  /// Short lines shown under bio (schools, exhibits, orgs — user-defined).
+  List<String> _pinnedDetails = [];
+  int _followersCount = 0;
+  int _followingCount = 0;
   bool _verifiedArtist = false;
   bool _portfolioPack = false;
   bool _featuredBoost = false;
@@ -45,6 +55,11 @@ class AuthState extends ChangeNotifier {
   String get photoUrl => _photoUrl;
   String get bio => _bio;
   String get style => _style;
+  List<String> get pinnedDetails => List.unmodifiable(_pinnedDetails);
+  int get followersCount =>
+      _followersCount < 0 ? 0 : _followersCount;
+  int get followingCount =>
+      _followingCount < 0 ? 0 : _followingCount;
   bool get isVerified => _isVerified;
   bool get verificationSubmitted => _verificationSubmitted;
   bool get isScholarVerified => _isScholarVerified;
@@ -285,6 +300,30 @@ class AuthState extends ChangeNotifier {
     }
   }
 
+  Future<void> followArtist(String artistUserId) async {
+    final me = currentUserId;
+    if (me == null || artistUserId.isEmpty || me == artistUserId) {
+      return;
+    }
+    await _followService.follow(followerId: me, artistId: artistUserId);
+  }
+
+  Future<void> unfollowArtist(String artistUserId) async {
+    final me = currentUserId;
+    if (me == null || artistUserId.isEmpty || me == artistUserId) {
+      return;
+    }
+    await _followService.unfollow(followerId: me, artistId: artistUserId);
+  }
+
+  Stream<bool> watchFollowingArtist(String artistUserId) {
+    final me = currentUserId;
+    if (me == null) {
+      return Stream.value(false);
+    }
+    return _followService.watchIsFollowing(followerId: me, artistId: artistUserId);
+  }
+
   Future<void> setUnauthenticated() async {
     await _userSubscription?.cancel();
     _userSubscription = null;
@@ -328,6 +367,10 @@ class AuthState extends ChangeNotifier {
                 data['scholarVerificationSubmitted'] ?? false;
             _bio = data['bio'] ?? '';
             _style = data['artStyle'] ?? '';
+            _pinnedDetails = _parsePinnedDetails(data);
+            _followersCount = (data['followersCount'] as num?)?.toInt() ?? 0;
+            _followingCount =
+                (data['followingCount'] as num?)?.toInt() ?? 0;
             _portfolioPack = data['portfolioPack'] ?? false;
             _featuredBoost = data['featuredBoost'] ?? false;
             _acceptingCommissions =
@@ -403,6 +446,7 @@ class AuthState extends ChangeNotifier {
     bool? portfolioPack,
     bool? featuredBoost,
     bool? acceptingCommissions,
+    List<String>? pinnedDetails,
   }) async {
     final uid = currentUserId;
     if (uid == null) {
@@ -419,6 +463,9 @@ class AuthState extends ChangeNotifier {
       if (acceptingCommissions != null) {
         _acceptingCommissions = acceptingCommissions;
       }
+      if (pinnedDetails != null) {
+        _pinnedDetails = List<String>.from(pinnedDetails);
+      }
       notifyListeners();
       return;
     }
@@ -433,6 +480,7 @@ class AuthState extends ChangeNotifier {
     final resolvedFeaturedBoost = featuredBoost ?? _featuredBoost;
     final resolvedAcceptingCommissions =
         acceptingCommissions ?? _acceptingCommissions;
+    final resolvedPins = pinnedDetails ?? _pinnedDetails;
 
     await _service.updateUserProfile(uid, {
       'displayName': trimmedName,
@@ -442,6 +490,12 @@ class AuthState extends ChangeNotifier {
       'portfolioPack': resolvedPortfolioPack,
       'featuredBoost': resolvedFeaturedBoost,
       'acceptingCommissions': resolvedAcceptingCommissions,
+      'pinnedDetails': resolvedPins
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList(),
+      'exhibitHighlights': FieldValue.delete(),
+      'memberOrganizations': FieldValue.delete(),
       'updatedAt': FieldValue.serverTimestamp(),
     });
 
@@ -464,6 +518,7 @@ class AuthState extends ChangeNotifier {
     _portfolioPack = resolvedPortfolioPack;
     _featuredBoost = resolvedFeaturedBoost;
     _acceptingCommissions = resolvedAcceptingCommissions;
+    _pinnedDetails = List<String>.from(resolvedPins);
     notifyListeners();
   }
 
@@ -539,4 +594,28 @@ class AuthState extends ChangeNotifier {
         return error.message ?? 'Authentication failed. Please try again.';
     }
   }
+}
+
+List<String> _parseStringListField(dynamic raw) {
+  if (raw == null) {
+    return [];
+  }
+  if (raw is List) {
+    return raw
+        .map((dynamic e) => e.toString().trim())
+        .where((String s) => s.isNotEmpty)
+        .toList();
+  }
+  return [];
+}
+
+List<String> _parsePinnedDetails(Map<String, dynamic> data) {
+  final pinned = _parseStringListField(data['pinnedDetails']);
+  if (pinned.isNotEmpty) {
+    return pinned;
+  }
+  return [
+    ..._parseStringListField(data['exhibitHighlights']),
+    ..._parseStringListField(data['memberOrganizations']),
+  ];
 }

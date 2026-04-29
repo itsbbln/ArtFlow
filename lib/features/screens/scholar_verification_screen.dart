@@ -2,9 +2,12 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/theme/app_shadows.dart';
+import '../../core/theme/editorial_colors.dart';
 import '../auth/presentation/auth_state.dart';
 import '../shared/data/supabase_image_service.dart';
 
@@ -61,25 +64,27 @@ class _ScholarVerificationScreenState extends State<ScholarVerificationScreen> {
         bytes: bytes,
         fileExtension: extension,
       );
-      if (mounted) {
-        setState(() {
-          _isUploading = false;
-          _uploadedIdUrl = uploadedUrl;
-          _uploadedIdBytes = bytes;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('School ID uploaded successfully!')),
-        );
+      if (!mounted) {
+        return;
       }
+      setState(() {
+        _isUploading = false;
+        _uploadedIdUrl = uploadedUrl;
+        _uploadedIdBytes = bytes;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('School ID uploaded successfully!')),
+      );
     } catch (e) {
-      if (mounted) {
-        setState(() => _isUploading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e is StateError ? e.message : 'Upload failed.'),
-          ),
-        );
+      if (!mounted) {
+        return;
       }
+      setState(() => _isUploading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e is StateError ? e.message : 'Upload failed.'),
+        ),
+      );
     }
   }
 
@@ -99,265 +104,415 @@ class _ScholarVerificationScreenState extends State<ScholarVerificationScreen> {
     try {
       await auth.submitScholarVerification(schoolIdUrl: _uploadedIdUrl!);
 
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Scholar application submitted for review!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        context.go('/profile');
+      if (!mounted) {
+        return;
       }
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Scholar application submitted for review!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      context.go('/profile');
     } catch (e) {
-      setState(() {
-        _isUploading = false;
-      });
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+      if (!mounted) {
+        return;
       }
+      setState(() => _isUploading = false);
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: EditorialColors.pageCream,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: EditorialColors.ink,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.pop(),
         ),
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).scaffoldBackgroundColor,
-              const Color(0xFFFAEBDC).withOpacity(0.6),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: ClipPath(
+              clipper: _ScholarHeroClip(),
+              child: SizedBox(
+                height: 200,
+                width: double.infinity,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        EditorialColors.tribalMaroon,
+                        EditorialColors.tribalRed.withValues(alpha: 0.96),
+                        EditorialColors.tribalGold.withValues(alpha: 0.92),
+                      ],
+                      stops: const [0.0, 0.55, 1.0],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                  ),
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.fromLTRB(24, 56, 24, 50),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color:
+                                Colors.white.withValues(alpha: 0.2),
+                            borderRadius:
+                                BorderRadius.circular(20),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.42),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.workspace_premium_rounded,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Scholar tier',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.8,
+                                  color: Colors.white.withValues(alpha: 0.88),
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                'Verify your student ID',
+                                style: GoogleFonts.playfairDisplay(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.12,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.school_outlined,
-                  size: 48,
-                  color: Color(0xFFB71B1B),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Apply for Scholar Tier',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
+            sliver: SliverToBoxAdapter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Student artists and collectors unlock curated perks.',
+                    style: GoogleFonts.inter(
+                      fontSize: 15,
+                      height: 1.5,
+                      color: EditorialColors.muted.withValues(alpha: 0.95),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Get exclusive benefits and discounts as a verified student artist or collector.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyLarge?.copyWith(color: Colors.black54),
-                ),
-                const SizedBox(height: 32),
-
-                _buildInfoCard(),
-
-                const SizedBox(height: 32),
-
-                Text(
-                  'Upload School ID',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 20),
+                  const _BenefitCarousel(),
+                  const SizedBox(height: 26),
+                  Text(
+                    'Upload school ID',
+                    style: GoogleFonts.playfairDisplay(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: EditorialColors.ink,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                _buildUploadSection(),
-
-                const SizedBox(height: 32),
-
-                Row(
-                  children: [
-                    Checkbox(
+                  const SizedBox(height: 10),
+                  Text(
+                    'JPG / PNG • clear corners • matches your registered name.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      color: EditorialColors.muted.withValues(alpha: 0.9),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _buildUploadSection(),
+                  const SizedBox(height: 22),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: AppRadii.circularXl(),
+                      border: Border.all(color: EditorialColors.border),
+                      boxShadow: AppShadows.card,
+                    ),
+                    child: CheckboxListTile(
                       value: _agreedToTerms,
                       onChanged: (v) =>
                           setState(() => _agreedToTerms = v ?? false),
-                    ),
-                    const Expanded(
-                      child: Text(
-                        'I certify that the uploaded ID is valid and belongs to me.',
-                        style: TextStyle(fontSize: 12),
+                      title: Text(
+                        'This ID belongs to me and is valid.',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          height: 1.38,
+                          color: EditorialColors.charcoal,
+                          fontSize: 14,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 24),
-
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: ElevatedButton(
-                    onPressed: (_uploadedIdUrl != null && _agreedToTerms)
-                        ? _submitApplication
-                        : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFB71B1B),
-                      foregroundColor: Colors.white,
+                      controlAffinity: ListTileControlAffinity.leading,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: AppRadii.circularXl(),
                       ),
-                    ),
-                    child: const Text(
-                      'Submit Application',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                      checkColor: Colors.white,
+                      fillColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.selected)
+                            ? EditorialColors.tribalRed
+                            : null,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: FilledButton(
+                      onPressed: (_uploadedIdUrl != null && _agreedToTerms)
+                          ? _submitApplication
+                          : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: EditorialColors.tribalRed,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: Text(
+                        'Submit scholar application',
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInfoCard() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
         ],
       ),
-      child: Column(
-        children: [
-          _buildBenefitItem(
-            Icons.percent,
-            'Exclusive Discounts',
-            'Up to 20% off on selected artworks.',
-          ),
-          const Divider(height: 24),
-          _buildBenefitItem(
-            Icons.star_outline,
-            'Scholar Badge',
-            'Showcase your student status on your profile.',
-          ),
-          const Divider(height: 24),
-          _buildBenefitItem(
-            Icons.event_available,
-            'Early Access',
-            'Get first dibs on new collection launches.',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBenefitItem(IconData icon, String title, String subtitle) {
-    return Row(
-      children: [
-        Icon(icon, color: const Color(0xFFB71B1B), size: 24),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(
-                subtitle,
-                style: const TextStyle(color: Colors.black54, fontSize: 12),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
   Widget _buildUploadSection() {
-    return GestureDetector(
-      onTap: _isUploading ? null : _handleUpload,
-      child: Container(
-        width: double.infinity,
-        height: 180,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _uploadedIdUrl != null ? Colors.green : Colors.black12,
-            width: 2,
-            style: BorderStyle.solid,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: AppRadii.circularLg(),
+        onTap: _isUploading ? null : _handleUpload,
+        child: Ink(
+          height: 200,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: AppRadii.circularLg(),
+            border: Border.all(
+              color: _uploadedIdUrl != null
+                  ? const Color(0xFF2E9D62)
+                  : EditorialColors.border,
+              width: 2,
+            ),
+            boxShadow: AppShadows.card,
           ),
-        ),
-        child: _isUploading
-            ? const Center(child: CircularProgressIndicator())
-            : _uploadedIdUrl != null
-            ? Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (_uploadedIdBytes != null)
-                    Image.memory(_uploadedIdBytes!, fit: BoxFit.cover)
-                  else
-                    Image.network(
-                      _uploadedIdUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: Colors.grey.shade100,
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          Icons.image_not_supported_outlined,
-                          size: 42,
+          child: _isUploading
+              ? const Center(child: CircularProgressIndicator())
+              : _uploadedIdUrl != null
+                  ? Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (_uploadedIdBytes != null)
+                          ClipRRect(
+                            borderRadius: AppRadii.circularMd(),
+                            child:
+                                Image.memory(_uploadedIdBytes!, fit: BoxFit.cover),
+                          )
+                        else
+                          ClipRRect(
+                            borderRadius: AppRadii.circularMd(),
+                            child: Image.network(
+                              _uploadedIdUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color:
+                                    EditorialColors.parchmentDeep,
+                                alignment: Alignment.center,
+                                child: const Icon(
+                                  Icons.image_not_supported_outlined,
+                                  size: 42,
+                                ),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          right: 14,
+                          top: 14,
+                          child: FilledButton.tonal(
+                            onPressed: _handleUpload,
+                            child: const Text('Replace'),
+                          ),
                         ),
-                      ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.photo_camera_front_rounded,
+                          color: EditorialColors.tribalRed.withValues(alpha: 0.82),
+                          size: 44,
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          'Tap to upload · school ID visible',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 15,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '(JPG, PNG)',
+                          style: GoogleFonts.inter(
+                            color: EditorialColors.muted,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
-                  Positioned(
-                    right: 12,
-                    top: 12,
-                    child: FilledButton.tonal(
-                      onPressed: _handleUpload,
-                      child: const Text('Replace'),
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(
-                    Icons.cloud_upload_outlined,
-                    color: Colors.black26,
-                    size: 48,
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    'Tap to upload School ID',
-                    style: TextStyle(color: Colors.black54),
-                  ),
-                  Text(
-                    '(JPG, PNG up to 5MB)',
-                    style: TextStyle(color: Colors.black26, fontSize: 12),
-                  ),
-                ],
-              ),
+        ),
       ),
     );
   }
+}
+
+class _BenefitCarousel extends StatelessWidget {
+  const _BenefitCarousel();
+
+  @override
+  Widget build(BuildContext context) {
+    const rows = [
+      (
+        Icons.local_offer_rounded,
+        'Stacked discounts',
+        'Up to 20% on curated drops.',
+      ),
+      (
+        Icons.workspace_premium_outlined,
+        'Scholar laurel',
+        'Visible badge beside your username.',
+      ),
+      (
+        Icons.rocket_launch_rounded,
+        'First access',
+        'Collection launches unlocked earlier.',
+      ),
+    ];
+
+    return Column(
+      children: rows.map((tuple) {
+        final (ic, t, s) = tuple;
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border:
+                  Border.all(color: EditorialColors.border.withValues(alpha: 0.9)),
+              boxShadow: AppShadows.card,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              child: Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: EditorialColors.tribalRed.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(ic, color: EditorialColors.tribalRed),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          t,
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          s,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            height: 1.4,
+                            color: EditorialColors.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _ScholarHeroClip extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    path.lineTo(0, size.height - 42);
+    path.quadraticBezierTo(
+      size.width * 0.5,
+      size.height + 28,
+      size.width,
+      size.height - 42,
+    );
+    path.lineTo(size.width, 0);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }

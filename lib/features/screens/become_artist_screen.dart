@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/theme/app_shadows.dart';
+import '../../core/theme/editorial_colors.dart';
 import '../auth/presentation/auth_state.dart';
 import '../shared/data/supabase_image_service.dart';
 
@@ -276,12 +279,12 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
           onPressed: _isSubmitting ? null : () => context.pop(),
         ),
       ),
-      body: Container(
+      body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Theme.of(context).scaffoldBackgroundColor,
-              const Color(0xFFFAEBDC).withOpacity(0.6),
+              EditorialColors.pageCream,
+              BukidnonGradients.pageAmbient.colors.last.withValues(alpha: 0.98),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -289,25 +292,82 @@ class _BecomeArtistScreenState extends State<BecomeArtistScreen> {
         ),
         child: SafeArea(
           child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(22, 12, 22, 32),
             children: [
-              const SizedBox(height: 20),
-              Text(
-                application?.isRejected == true
-                    ? 'Update Your Artist Application'
-                    : 'Become a Verified Artist',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: EditorialColors.border),
+                  boxShadow: AppShadows.raised,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  EditorialColors.tribalRed.withValues(alpha: 0.1),
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                            ),
+                            child: Icon(Icons.brush_rounded,
+                                color: EditorialColors.tribalRed,
+                                size: 22),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Creator application',
+                                  style: GoogleFonts.playfairDisplay(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 21,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  'Step ${_currentStep + 1} of 3 · takes about five minutes.',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 13,
+                                    color: EditorialColors.muted,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(99),
+                        child: LinearProgressIndicator(
+                          value: (_currentStep + 1) / 3,
+                          minHeight: 8,
+                          backgroundColor:
+                              EditorialColors.parchmentDeep.withValues(alpha: 0.72),
+                          valueColor:
+                              const AlwaysStoppedAnimation<Color>(
+                            EditorialColors.tribalRed,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Share your portfolio, your creative story, and an identity document so the team can review your application properly.',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Colors.black54,
-                  height: 1.5,
-                ),
-              ),
+              const SizedBox(height: 22),
               if (application?.isRejected == true) ...[
                 const SizedBox(height: 20),
                 _InfoBox(
@@ -900,54 +960,96 @@ class _StepIndicator extends StatelessWidget {
 
   final int currentStep;
 
+  static const _labels = ['Medium', 'Portfolio', 'Verify'];
+
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: List.generate(3, (index) {
-        final isActive = index <= currentStep;
-        final isCompleted = index < currentStep;
-        return Expanded(
-          child: Column(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? Theme.of(context).colorScheme.primary
-                      : Colors.white,
-                  border: Border.all(
-                    color: isActive
-                        ? Theme.of(context).colorScheme.primary
-                        : const Color(0xFFE4D8CB),
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
-                  child: isCompleted
-                      ? const Icon(Icons.check, color: Colors.white, size: 20)
-                      : Text(
-                          '${index + 1}',
-                          style: TextStyle(
-                            color: isActive ? Colors.white : Colors.black54,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                ),
+    final primary = EditorialColors.tribalRed;
+
+    Widget circle(int index) {
+      final isCompleted = index < currentStep;
+      final isFuture = index > currentStep;
+
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: !isFuture
+                  ? LinearGradient(
+                      colors: [primary, primary.withValues(alpha: 0.88)],
+                    )
+                  : null,
+              color: isFuture ? Colors.white : null,
+              border: Border.all(
+                color: !isFuture ? primary : EditorialColors.border,
+                width: 2,
               ),
-              const SizedBox(height: 8),
-              Text(
-                ['Medium', 'Portfolio', 'Verify'][index],
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: isActive ? Colors.black87 : Colors.black54,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
+              shape: BoxShape.circle,
+              boxShadow: index == currentStep ? AppShadows.softGlow : null,
+            ),
+            child: Center(
+              child: isCompleted
+                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 22)
+                  : Text(
+                      '${index + 1}',
+                      style: TextStyle(
+                        color: isFuture ? EditorialColors.muted : Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+            ),
           ),
-        );
-      }),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: 72,
+            child: Text(
+              _labels[index],
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: EditorialColors.muted.withValues(alpha: index <= currentStep ? 0.92 : 0.65),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11,
+                  ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    Widget lineBetween(int segmentIndex) {
+      final done = currentStep > segmentIndex;
+      return Expanded(
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 28),
+          child: Center(
+            child: Container(
+              height: 3,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(99),
+                color: done ? primary : EditorialColors.border,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          circle(0),
+          lineBetween(0),
+          circle(1),
+          lineBetween(1),
+          circle(2),
+        ],
+      ),
     );
   }
 }

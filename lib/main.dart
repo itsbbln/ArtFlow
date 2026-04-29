@@ -9,7 +9,7 @@ import 'core/config/env_config.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
-    await dotenv.load(fileName: '.env');
+    await dotenv.load(fileName: 'assets/dotenv');
   } catch (e) {
     debugPrint('Environment file was not loaded: $e');
   }

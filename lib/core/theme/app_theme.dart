@@ -1,88 +1,139 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'app_shadows.dart';
+import 'editorial_colors.dart';
+
 class AppTheme {
   static ThemeData light() {
-    const background = Color(0xFFFFF6ED);
     const surface = Color(0xFFFFFFFF);
-    const primary = Color(0xFFB71B1B);
-    const secondary = Color(0xFFE3BC2D);
-    const foreground = Color(0xFF161616);
-
-    final colorScheme = const ColorScheme.light(
+    final colorScheme = ColorScheme.light(
       brightness: Brightness.light,
-      primary: primary,
+      primary: EditorialColors.tribalRed,
       onPrimary: Colors.white,
-      secondary: secondary,
-      onSecondary: foreground,
-      error: Color(0xFF9A1D1D),
+      secondary: EditorialColors.tribalGold,
+      onSecondary: EditorialColors.charcoal,
+      tertiary: EditorialColors.tribalMaroon,
+      error: const Color(0xFFB91C1C),
       onError: Colors.white,
       surface: surface,
-      onSurface: foreground,
+      onSurface: EditorialColors.charcoal,
     );
 
     final textTheme = GoogleFonts.interTextTheme().copyWith(
       headlineLarge: GoogleFonts.playfairDisplay(
         fontSize: 30,
         fontWeight: FontWeight.w700,
-        color: foreground,
+        color: EditorialColors.charcoal,
       ),
       headlineMedium: GoogleFonts.playfairDisplay(
         fontSize: 26,
         fontWeight: FontWeight.w700,
-        color: foreground,
+        color: EditorialColors.charcoal,
       ),
       headlineSmall: GoogleFonts.playfairDisplay(
         fontSize: 22,
         fontWeight: FontWeight.w700,
-        color: foreground,
+        color: EditorialColors.charcoal,
       ),
       titleLarge: GoogleFonts.playfairDisplay(
         fontSize: 20,
         fontWeight: FontWeight.w600,
-        color: foreground,
+        color: EditorialColors.charcoal,
       ),
       titleMedium: GoogleFonts.inter(
         fontSize: 16,
         fontWeight: FontWeight.w600,
-        color: foreground,
+        color: EditorialColors.charcoal,
       ),
-      bodyMedium: GoogleFonts.inter(fontSize: 14, color: foreground),
+      bodyMedium:
+          GoogleFonts.inter(fontSize: 14, color: EditorialColors.charcoal),
+    );
+
+    final cardShape = RoundedRectangleBorder(
+      borderRadius: AppRadii.circularLg(),
+      side: BorderSide(
+        color: EditorialColors.border.withValues(alpha: 0.82),
+      ),
     );
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: background,
+      scaffoldBackgroundColor: EditorialColors.pageCream,
+      splashFactory: InkRipple.splashFactory,
+      splashColor: EditorialColors.tribalRed.withValues(alpha: 0.09),
+      highlightColor: EditorialColors.tribalGold.withValues(alpha: 0.06),
       textTheme: textTheme,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: ZoomPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          TargetPlatform.fuchsia: FadeUpwardsPageTransitionsBuilder(),
+        },
+      ),
       appBarTheme: AppBarTheme(
         centerTitle: false,
-        backgroundColor: background,
-        foregroundColor: foreground,
+        backgroundColor: EditorialColors.surfaceCream,
+        foregroundColor: EditorialColors.charcoal,
         elevation: 0,
+        scrolledUnderElevation: 0,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+          borderRadius: AppRadii.circularLg(),
+          borderSide: const BorderSide(color: EditorialColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE4D8CB)),
+          borderRadius: AppRadii.circularLg(),
+          borderSide: const BorderSide(color: EditorialColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primary, width: 1.4),
+          borderRadius: AppRadii.circularLg(),
+          borderSide:
+              const BorderSide(color: EditorialColors.tribalRed, width: 1.35),
         ),
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: CardThemeData(
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12)),
-        ),
+        shape: cardShape,
         color: surface,
+        elevation: 0,
+        shadowColor: const Color(0xFF171717).withValues(alpha: 0.07),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.circularLg()),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.circularLg()),
+          side: const BorderSide(color: EditorialColors.border),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        elevation: 0,
+        shadowColor: const Color(0xFF171717).withValues(alpha: 0.12),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadii.circularXl(),
+        ),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        elevation: 0,
+        shadowColor: const Color(0xFF171717).withValues(alpha: 0.1),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadii.lg),
+          ),
+        ),
       ),
     );
   }

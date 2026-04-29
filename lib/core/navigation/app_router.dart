@@ -109,12 +109,8 @@ GoRouter createRouter(AuthState authState) {
         path: '/verification',
         builder: (_, _) => const VerificationPage(),
       ),
-      GoRoute(
-        path: '/checkout/:artworkId',
-        builder: (_, state) {
-          return CheckoutScreen(artworkId: state.pathParameters['artworkId']!);
-        },
-      ),
+      // Static path must be registered before `/checkout/:artworkId`, otherwise
+      // `success` is captured as an artwork id and checkout shows "Artwork not found."
       GoRoute(
         path: '/checkout/success',
         builder: (_, state) {
@@ -123,6 +119,12 @@ GoRouter createRouter(AuthState authState) {
             artworkTitle: state.uri.queryParameters['artwork'] ?? 'Artwork',
             reference: state.uri.queryParameters['reference'] ?? '',
           );
+        },
+      ),
+      GoRoute(
+        path: '/checkout/:artworkId',
+        builder: (_, state) {
+          return CheckoutScreen(artworkId: state.pathParameters['artworkId']!);
         },
       ),
       ShellRoute(

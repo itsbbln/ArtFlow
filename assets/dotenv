@@ -1,14 +1,18 @@
-# Local override (optional): copy to `.env` in the project root — the app loads `assets/dotenv` at runtime.
-# For secrets, prefer editing `assets/dotenv` locally or using CI secrets; do not commit real keys.
+# Bundled env for flutter_dotenv (loaded from main.dart as assets/dotenv).
+# Replace YOUR_* placeholders with real values from Firebase / Supabase consoles.
+# Do not commit real secrets if this file is tracked — use a local override or CI secrets.
 
 # Firebase project-level config
-FIREBASE_PROJECT_NUMBER=YOUR_PROJECT_NUMBER
-FIREBASE_PROJECT_ID=YOUR_PROJECT_ID
-FIREBASE_STORAGE_BUCKET=YOUR_PROJECT_ID.firebasestorage.app
-FIREBASE_DATABASE_URL=https://your-project-id-default-rtdb.firebaseio.com
+FIREBASE_PROJECT_NUMBER=
+577596756711
+FIREBASE_PROJECT_ID=
+artflow-b5709
+FIREBASE_STORAGE_BUCKET=
+artflow-b5709.firebasestorage.app
+FIREBASE_DATABASE_URL=https://artflow-b5709-default-rtdb.asia-southeast1.firebasedatabase.app/
 
 # Firebase app / platform config
-FIREBASE_ANDROID_APP_ID=YOUR_ANDROID_APP_ID
+FIREBASE_ANDROID_APP_ID=1:577596756711:android:d3dd769a115a5fa41f0842
 FIREBASE_ANDROID_PACKAGE_NAME=com.example.artflow_flutter
 FIREBASE_ANDROID_API_KEY=YOUR_ANDROID_API_KEY
 FIREBASE_ANDROID_OAUTH_CLIENT_ID=YOUR_ANDROID_OAUTH_CLIENT_ID

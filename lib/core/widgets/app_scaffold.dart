@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../features/auth/presentation/auth_state.dart';
 import '../../features/shared/data/app_data_service.dart';
+import '../../core/theme/editorial_colors.dart';
+import '../../core/theme/app_shadows.dart';
 
 class AppScaffold extends StatelessWidget {
   const AppScaffold({super.key, required this.location, required this.child});
@@ -47,7 +49,7 @@ class AppScaffold extends StatelessWidget {
     return Scaffold(
       endDrawer: Drawer(
         child: Container(
-          color: const Color(0xFFF7F2EA),
+          color: EditorialColors.tribalCream.withValues(alpha: 0.94),
           child: SafeArea(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
@@ -55,8 +57,9 @@ class AppScaffold extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(14),
+                    gradient: BukidnonGradients.profileHero,
+                    borderRadius: AppRadii.circularLg(),
+                    boxShadow: AppShadows.card,
                   ),
                   child: Row(
                     children: [
@@ -254,8 +257,10 @@ class AppScaffold extends StatelessWidget {
                     color: Theme.of(
                       context,
                     ).scaffoldBackgroundColor.withValues(alpha: 0.92),
-                    border: const Border(
-                      bottom: BorderSide(color: Color(0x1A000000)),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: EditorialColors.border.withValues(alpha: 0.75),
+                      ),
                     ),
                   ),
                   child: Row(
@@ -355,15 +360,54 @@ class AppScaffold extends StatelessWidget {
                   ),
                 ),
               ),
-              Expanded(child: SafeArea(top: false, child: child)),
+              Expanded(
+                child: SafeArea(
+                  top: false,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, anim) {
+                      return FadeTransition(
+                        opacity: anim,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0, 0.018),
+                            end: Offset.zero,
+                          ).animate(
+                            CurvedAnimation(
+                              parent: anim,
+                              curve: Curves.easeOutCubic,
+                            ),
+                          ),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: KeyedSubtree(
+                      key: ValueKey<String>(location),
+                      child: child,
+                    ),
+                  ),
+                ),
+              ),
               Container(
                 decoration: BoxDecoration(
                   color: Theme.of(
                     context,
-                  ).scaffoldBackgroundColor.withValues(alpha: 0.95),
-                  border: const Border(
-                    top: BorderSide(color: Color(0x1A000000)),
+                  ).scaffoldBackgroundColor.withValues(alpha: 0.96),
+                  border: Border(
+                    top: BorderSide(
+                      color: EditorialColors.border.withValues(alpha: 0.72),
+                    ),
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 14,
+                      offset: const Offset(0, -3),
+                    ),
+                  ],
                 ),
                 child: SafeArea(
                   top: false,
@@ -441,7 +485,7 @@ class AppScaffold extends StatelessWidget {
                   horizontal: 16,
                   vertical: 8,
                 ),
-                color: const Color(0xFFB71B1B),
+                color: EditorialColors.tribalRed,
                 child: Row(
                   children: [
                     const Icon(
@@ -501,25 +545,32 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dangerColor = const Color(0xFFB71B1B);
+    final dangerColor = EditorialColors.tribalRed;
     final titleColor = danger ? dangerColor : const Color(0xFF2D2A26);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        child: ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: AppShadows.card,
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          child: ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            leading: Icon(icon, color: titleColor),
+            title: Text(
+              title,
+              style: TextStyle(fontWeight: FontWeight.w600, color: titleColor),
+            ),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: onTap,
           ),
-          leading: Icon(icon, color: titleColor),
-          title: Text(
-            title,
-            style: TextStyle(fontWeight: FontWeight.w600, color: titleColor),
-          ),
-          trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: onTap,
         ),
       ),
     );
@@ -561,18 +612,27 @@ class _BottomItem extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w600,
-                color: active ? activeColor : inactive,
+                color: active
+                    ? Theme.of(context).colorScheme.primary
+                    : inactive,
               ),
             ),
             const SizedBox(height: 3),
             if (active)
-              Container(
-                width: 4,
-                height: 4,
+              DecoratedBox(
                 decoration: BoxDecoration(
-                  color: activeColor,
+                  gradient: LinearGradient(
+                    colors: [
+                      EditorialColors.tribalRed,
+                      EditorialColors.tribalGold,
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
                   borderRadius: BorderRadius.circular(99),
+                  boxShadow: AppShadows.softGlow,
                 ),
+                child: const SizedBox(height: 3, width: 20),
               ),
           ],
         ),

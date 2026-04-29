@@ -7,7 +7,10 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/theme/app_shadows.dart';
+import '../../core/theme/editorial_colors.dart';
 import '../auth/domain/auth_status.dart';
 import '../auth/presentation/auth_state.dart';
 import '../chat/data/chat_service.dart';
@@ -19,6 +22,15 @@ import '../shared/data/app_data_state.dart';
 import '../shared/data/supabase_image_service.dart';
 import '../shared/widgets/artwork_card.dart';
 import '../admin/presentation/screens/admin_dashboard_screen.dart';
+import 'screen_utils.dart';
+import 'widgets/empty_message_card.dart';
+import 'widgets/metric_summary_card.dart';
+import 'widgets/order_status_chip.dart';
+
+export 'artist_dashboard_screen.dart';
+export 'explore/explore_screen.dart';
+export 'home/home_screen.dart';
+export 'profile/profile_screen.dart';
 
 // ============================================================================
 // SPLASH SCREEN - Logo Animation Only
@@ -67,7 +79,16 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF8F1414),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            EditorialColors.tribalMaroon,
+            EditorialColors.tribalRed,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       child: Center(
         child: FadeTransition(
           opacity: _fadeAnimation,
@@ -314,395 +335,430 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  void _switchAuthMode(bool toLogin) {
+    if (_isLogin == toLogin) {
+      return;
+    }
+    setState(() {
+      _isLogin = toLogin;
+      _fullNameController.clear();
+      _emailController.clear();
+      _passwordController.clear();
+      _confirmPasswordController.clear();
+      _agreeToTerms = false;
+      _inlineError = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
+    final cs = Theme.of(context).colorScheme;
+
+    Widget authModeSegments() {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: EditorialColors.parchmentDeep.withValues(alpha: 0.85),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: EditorialColors.border),
+          boxShadow: AppShadows.card,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: [
+              Expanded(
+                child: Material(
+                  color: _isLogin ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(11),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(11),
+                    onTap: () => _switchAuthMode(true),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'Sign in',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: _isLogin
+                                  ? EditorialColors.tribalRed
+                                  : EditorialColors.muted,
+                            ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Material(
+                  color: !_isLogin ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(11),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(11),
+                    onTap: () => _switchAuthMode(false),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Text(
+                        'Create account',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: !_isLogin
+                                  ? EditorialColors.tribalRed
+                                  : EditorialColors.muted,
+                            ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: EditorialColors.ink,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => context.go('/welcome'),
         ),
       ),
-      body: Container(
+      body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Theme.of(context).scaffoldBackgroundColor,
-              const Color(0xFFFAEBDC).withOpacity(0.6),
+              EditorialColors.pageCream,
+              BukidnonGradients.pageAmbient.colors.last,
+              EditorialColors.surfaceCream.withValues(alpha: 0.92),
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-            children: [
-              const SizedBox(height: 20),
-
-              // ============ HEADER ============
-              Center(
-                child: Column(
-                  children: [
-                    Text(
-                      _isLogin ? 'Welcome back' : 'Create your account',
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(fontWeight: FontWeight.w800),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      _isLogin
-                          ? 'Log in to discover and collect amazing art'
-                          : 'Join ArtFlow to discover and collect amazing art',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyLarge?.copyWith(color: Colors.black54),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(22, 8, 22, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                authModeSegments(),
+                const SizedBox(height: 28),
+                Text(
+                  _isLogin ? 'Welcome back' : 'Join ArtFlow',
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                    color: EditorialColors.ink,
+                    height: 1.15,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-              ),
-              const SizedBox(height: 40),
-
-              // ============ FORM FIELDS ============
-              if (!_isLogin) ...[
-                _FormField(
-                  label: 'Full Name',
-                  hint: 'Enter the name you want to show on ArtFlow',
-                  controller: _fullNameController,
-                  icon: Icons.person_outline,
+                const SizedBox(height: 8),
+                Text(
+                  _isLogin
+                      ? 'Sign in to browse, collect, and message artists.'
+                      : 'Create an account to save favorites and checkout securely.',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    height: 1.45,
+                    color: EditorialColors.muted,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 20),
-              ],
-
-              _FormField(
-                label: 'Email Address',
-                hint: 'Enter your email',
-                controller: _emailController,
-                icon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-              ),
-              const SizedBox(height: 20),
-
-              _FormField(
-                label: 'Password',
-                hint: 'Enter your password',
-                controller: _passwordController,
-                icon: Icons.lock_outline,
-                isPassword: true,
-                obscureText: _obscurePassword,
-                onTogglePassword: () {
-                  setState(() => _obscurePassword = !_obscurePassword);
-                },
-              ),
-              const SizedBox(height: 20),
-
-              if (!_isLogin) ...[
-                _FormField(
-                  label: 'Confirm Password',
-                  hint: 'Re-enter your password',
-                  controller: _confirmPasswordController,
-                  icon: Icons.lock_outline,
-                  isPassword: true,
-                  obscureText: _obscureConfirmPassword,
-                  onTogglePassword: () {
-                    setState(() {
-                      _obscureConfirmPassword = !_obscureConfirmPassword;
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: _agreeToTerms,
-                  onChanged: (val) {
-                    setState(() {
-                      _agreeToTerms = val ?? false;
-                      _inlineError = null;
-                    });
-                  },
-                  title: RichText(
-                    text: TextSpan(
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.black54),
+                const SizedBox(height: 22),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: AppRadii.circularXl(),
+                    border: Border.all(color: EditorialColors.border),
+                    boxShadow: AppShadows.raised,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(22),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const TextSpan(text: 'I agree to the '),
-                        TextSpan(
-                          text: 'Terms of Service',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.primary,
-                                fontWeight: FontWeight.w600,
+                        if (!_isLogin) ...[
+                          _FormField(
+                            label: 'Full Name',
+                            hint: 'Name shown on ArtFlow',
+                            controller: _fullNameController,
+                            icon: Icons.person_outline_rounded,
+                          ),
+                          const SizedBox(height: 18),
+                        ],
+                        _FormField(
+                          label: 'Email',
+                          hint: 'you@example.com',
+                          controller: _emailController,
+                          icon: Icons.email_outlined,
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 18),
+                        _FormField(
+                          label: 'Password',
+                          hint: 'At least 6 characters',
+                          controller: _passwordController,
+                          icon: Icons.lock_outline_rounded,
+                          isPassword: true,
+                          obscureText: _obscurePassword,
+                          onTogglePassword: () {
+                            setState(() => _obscurePassword = !_obscurePassword);
+                          },
+                        ),
+                        if (!_isLogin) ...[
+                          const SizedBox(height: 18),
+                          _FormField(
+                            label: 'Confirm password',
+                            hint: 'Repeat your password',
+                            controller: _confirmPasswordController,
+                            icon: Icons.lock_outline_rounded,
+                            isPassword: true,
+                            obscureText: _obscureConfirmPassword,
+                            onTogglePassword: () {
+                              setState(() {
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 14),
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            value: _agreeToTerms,
+                            activeColor: cs.primary,
+                            onChanged: (val) {
+                              setState(() {
+                                _agreeToTerms = val ?? false;
+                                _inlineError = null;
+                              });
+                            },
+                            title: RichText(
+                              text: TextSpan(
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(color: EditorialColors.charcoal.withValues(alpha: 0.75)),
+                                children: [
+                                  const TextSpan(text: 'I agree to the '),
+                                  TextSpan(
+                                    text: 'Terms of Service',
+                                    style: TextStyle(
+                                      color: cs.primary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
+                          ),
+                        ],
+                        if (_inlineError != null) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                            decoration: BoxDecoration(
+                              color: cs.errorContainer
+                                  .withValues(alpha: 0.92),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: cs.error.withValues(alpha: 0.35),
+                              ),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(
+                                  Icons.error_outline_rounded,
+                                  size: 18,
+                                  color: cs.error,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    _inlineError!,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: cs.onErrorContainer,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: FilledButton(
+                            onPressed: auth.status == AuthStatus.checking
+                                ? null
+                                : _handleEmailPasswordAuth,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: cs.primary,
+                              foregroundColor: cs.onPrimary,
+                              elevation: 0,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: auth.status == AuthStatus.checking
+                                ? SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: cs.onPrimary,
+                                    ),
+                                  )
+                                : Text(
+                                    _isLogin ? 'Continue' : 'Create account',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
-              ],
-
-              if (_inlineError != null) ...[
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.errorContainer.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.error.withValues(
-                        alpha: 0.35,
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.error_outline,
-                        size: 18,
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          _inlineError!,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onErrorContainer,
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-              ],
-
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: auth.status == AuthStatus.checking
-                      ? null
-                      : _handleEmailPasswordAuth,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: auth.status == AuthStatus.checking
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Text(
-                          _isLogin ? 'Sign In' : 'Create Account',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                ),
-              ),
-              const SizedBox(height: 18),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: Divider(color: Colors.black.withValues(alpha: 0.15)),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(
-                      'or',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: Colors.black54),
-                    ),
-                  ),
-                  Expanded(
-                    child: Divider(color: Colors.black.withValues(alpha: 0.15)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: const Color(0xFFE4D8CB)),
-                ),
-                child: Row(
+                const SizedBox(height: 22),
+                Row(
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F1E7),
-                        borderRadius: BorderRadius.circular(12),
+                    Expanded(
+                      child: Divider(
+                        color: EditorialColors.border,
+                        thickness: 1,
                       ),
-                      alignment: Alignment.center,
-                      child: const Text(
-                        'G',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w700,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      child: Text(
+                        'or continue with',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: EditorialColors.muted,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
                     Expanded(
-                      child: Text(
-                        _isLogin
-                            ? 'Sign in using your Google account. We will use your Google email to continue.'
-                            : 'Create your ArtFlow account using Google. Your Google email will become your sign-in email.',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.black87,
-                          height: 1.4,
-                        ),
+                      child: Divider(
+                        color: EditorialColors.border,
+                        thickness: 1,
                       ),
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
-
-              // ============ CTA BUTTONS ============
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: OutlinedButton(
-                  onPressed: auth.status == AuthStatus.checking
-                      ? null
-                      : _handleGoogleAuth,
-                  style: OutlinedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black87,
-                    side: const BorderSide(color: Color(0xFFE4D8CB)),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton(
+                    onPressed: auth.status == AuthStatus.checking
+                        ? null
+                        : _handleGoogleAuth,
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: EditorialColors.charcoal,
+                      side: BorderSide(color: EditorialColors.border),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: auth.status == AuthStatus.checking
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: EditorialColors.tribalRed,
+                            ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 26,
+                                height: 26,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color:
+                                      EditorialColors.parchmentDeep.withValues(alpha: 0.65),
+                                  borderRadius: BorderRadius.circular(7),
+                                ),
+                                child: const Text(
+                                  'G',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                _isLogin ? 'Google' : 'Google sign-up',
+                                style: GoogleFonts.inter(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                ),
+                              ),
+                            ],
+                          ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: Text(
+                    _isLogin
+                        ? 'Uses your Google email — same privacy as email sign-in.'
+                        : 'We use your Google email as your ArtFlow login.',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      height: 1.4,
+                      color: EditorialColors.muted,
                     ),
                   ),
-                  child: auth.status == AuthStatus.checking
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Color(0xFFB71B1B),
-                          ),
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
-                              'G',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              _isLogin
-                                  ? 'Continue with Google'
-                                  : 'Create with Google',
-                              style: Theme.of(context).textTheme.titleMedium
-                                  ?.copyWith(
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ],
-                        ),
                 ),
-              ),
-              const SizedBox(height: 16),
-
-              // Skip for now
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: TextButton(
+                const SizedBox(height: 8),
+                TextButton(
                   onPressed: () {
                     context.read<AuthState>().setAuthenticated(
-                      role: UserRole.buyer,
-                    );
+                          role: UserRole.buyer,
+                        );
                     context.go('/');
                   },
                   child: Text(
-                    'Skip for now',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.titleSmall?.copyWith(color: Colors.black54),
+                    'Browse as guest',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w600,
+                      color: EditorialColors.muted,
+                    ),
                   ),
                 ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // ============ TOGGLE LOGIN/REGISTER ============
-              Center(
-                child: Wrap(
-                  spacing: 4,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    Text(
-                      _isLogin
-                          ? "Don't have an account? "
-                          : 'Already have an account? ',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _isLogin = !_isLogin;
-                          _fullNameController.clear();
-                          _emailController.clear();
-                          _passwordController.clear();
-                          _confirmPasswordController.clear();
-                          _agreeToTerms = false;
-                          _inlineError = null;
-                        });
-                      },
-                      child: Text(
-                        _isLogin ? 'Create account' : 'Sign in',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -1481,1098 +1537,6 @@ class _ArtistOnboardingScreenState extends State<ArtistOnboardingScreen> {
   }
 }
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  String _selectedCategory = 'all';
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthState>();
-    final data = context.watch<AppDataState>();
-
-    final artworks = _filterByCategory(data.artworks, _selectedCategory);
-    final featured = artworks.where((item) => item.isFeatured).toList();
-    final categories = data.categories;
-    final auctions = artworks.where((item) {
-      return item.isAuction &&
-          item.auctionStatus == 'active' &&
-          (item.auctionEndAt == null ||
-              item.auctionEndAt!.isAfter(DateTime.now()));
-    }).toList();
-
-    final firstFeatured = featured.isNotEmpty ? featured.first : null;
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-      children: [
-        Text(
-          "Maayong adlaw, ${auth.displayName.split(' ').first}",
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.black54,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-
-        const SizedBox(height: 4),
-
-        Text(
-          'Discover Local',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        Text(
-          'Bukidnon Art',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: Theme.of(context).colorScheme.primary,
-          ),
-        ),
-
-        const SizedBox(height: 14),
-
-        const PartnerCarousel(),
-        const SizedBox(height: 20),
-        const FeaturedArtistSection(),
-        const SizedBox(height: 18),
-
-        // ================= FEATURED =================
-        if (firstFeatured != null)
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final compact = constraints.maxWidth < 360;
-              return Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withOpacity(0.16),
-                  ),
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary.withOpacity(0.08),
-                      const Color(0xFFF1E5CE).withOpacity(0.6),
-                      Theme.of(context).colorScheme.secondary.withOpacity(0.08),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: compact
-                    ? Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Featured Artwork',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            firstFeatured.artistName,
-                            style: Theme.of(context).textTheme.titleMedium,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            firstFeatured.title,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 12),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              firstFeatured.imageUrl ??
-                                  (firstFeatured.images.isNotEmpty
-                                      ? firstFeatured.images.first
-                                      : ''),
-                              width: double.infinity,
-                              height: 140,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Container(
-                                height: 140,
-                                color: const Color(0xFFF1E5CE),
-                                child: const Icon(Icons.image_outlined),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          FilledButton.tonal(
-                            onPressed: () =>
-                                context.push('/artwork/${firstFeatured.id}'),
-                            child: const Text('View Artwork'),
-                          ),
-                        ],
-                      )
-                    : Row(
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Featured Artwork',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  firstFeatured.artistName,
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.titleMedium,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  firstFeatured.title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                ),
-                                const SizedBox(height: 8),
-                                FilledButton.tonal(
-                                  onPressed: () => context.push(
-                                    '/artwork/${firstFeatured.id}',
-                                  ),
-                                  child: const Text('View Artwork'),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              firstFeatured.imageUrl ??
-                                  (firstFeatured.images.isNotEmpty
-                                      ? firstFeatured.images.first
-                                      : ''),
-                              width: 94,
-                              height: 94,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => Container(
-                                width: 94,
-                                height: 94,
-                                color: const Color(0xFFF1E5CE),
-                                child: const Icon(Icons.image_outlined),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-              );
-            },
-          ),
-
-        const SizedBox(height: 16),
-
-        // ================= CATEGORIES =================
-        Row(
-          children: [
-            Text('Categories', style: Theme.of(context).textTheme.titleLarge),
-            const Spacer(),
-            TextButton(
-              onPressed: () => context.push('/explore'),
-              child: const Text('See all'),
-            ),
-          ],
-        ),
-
-        SizedBox(
-          height: 34,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: categories.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final category = categories[index];
-              final isSelected = category == _selectedCategory;
-
-              return InkWell(
-                borderRadius: BorderRadius.circular(999),
-                onTap: () {
-                  setState(() {
-                    _selectedCategory = category;
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : Colors.white,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: const Color(0xFFE4D8CB)),
-                  ),
-                  child: Text(
-                    _categoryLabel(category),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: isSelected ? Colors.white : Colors.black87,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 16),
-
-        if (auctions.isNotEmpty) ...[
-          Row(
-            children: [
-              Icon(
-                Icons.local_fire_department_outlined,
-                size: 18,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'Happening Now',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          SizedBox(
-            height: 270,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: auctions.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 10),
-              itemBuilder: (context, index) {
-                final item = auctions[index];
-                return SizedBox(
-                  width: 190,
-                  child: ArtworkCard(
-                    artwork: item,
-                    onTap: () => context.push('/artwork/${item.id}'),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 18),
-        ],
-
-        // ================= TRENDING =================
-        Row(
-          children: [
-            Icon(
-              Icons.trending_up,
-              size: 18,
-              color: Theme.of(context).colorScheme.secondary,
-            ),
-            const SizedBox(width: 6),
-            Text('Trending Now', style: Theme.of(context).textTheme.titleLarge),
-          ],
-        ),
-
-        const SizedBox(height: 10),
-
-        if (artworks.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(24),
-            child: Center(child: Text("No artworks in this category yet")),
-          )
-        else
-          LayoutBuilder(
-            builder: (context, constraints) {
-              const crossAxisCount = 2;
-              const spacing = 10.0;
-              final cardWidth =
-                  (constraints.maxWidth - spacing * (crossAxisCount - 1)) /
-                  crossAxisCount;
-              final cardHeight = cardWidth + 92;
-
-              return GridView.builder(
-                itemCount: artworks.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: spacing,
-                  crossAxisSpacing: spacing,
-                  mainAxisExtent: cardHeight,
-                ),
-                itemBuilder: (context, index) {
-                  final item = artworks[index];
-                  return ArtworkCard(
-                    artwork: item,
-                    onTap: () => context.push('/artwork/${item.id}'),
-                  );
-                },
-              );
-            },
-          ),
-      ],
-    );
-  }
-}
-
-class _PartnerSlide {
-  const _PartnerSlide({
-    required this.label,
-    required this.description,
-    required this.color,
-    required this.assetPath,
-  });
-
-  final String label;
-  final String description;
-  final Color color;
-  final String assetPath;
-}
-
-class PartnerCarousel extends StatefulWidget {
-  const PartnerCarousel({super.key});
-
-  @override
-  State<PartnerCarousel> createState() => _PartnerCarouselState();
-}
-
-class _PartnerCarouselState extends State<PartnerCarousel> {
-  final PageController _controller = PageController(viewportFraction: 0.88);
-  int _currentIndex = 0;
-
-  static const slides = <_PartnerSlide>[
-    _PartnerSlide(
-      label: 'Partnered Orgs',
-      description:
-          'Partnering with local organizations to support Bukidnon artists and craftspeople.',
-      color: Color(0xFF7B3F00),
-      assetPath: 'assets/images/artizan_logo.png',
-    ),
-    _PartnerSlide(
-      label: 'Bukidnon Artists',
-      description:
-          'Highlighting Bukidnon makers and artists through curated collaborations.',
-      color: Color(0xFF1E4F3F),
-      assetPath: 'assets/images/bukidnon_artists_logo.png',
-    ),
-    _PartnerSlide(
-      label: 'Artizan Community',
-      description:
-          'Growing artisan networks with trusted local partnership programs.',
-      color: Color(0xFF5C2B8A),
-      assetPath: 'assets/images/artizan_logo.png',
-    ),
-  ];
-
-  void _onPageChanged(int index) {
-    setState(() => _currentIndex = index);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Partner highlights',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 12),
-
-        SizedBox(
-          height: 252,
-          child: PageView.builder(
-            controller: _controller,
-            itemCount: slides.length,
-            onPageChanged: _onPageChanged,
-            itemBuilder: (context, index) {
-              final slide = slides[index];
-
-              return AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  double scale = 1.0;
-
-                  if (_controller.position.haveDimensions) {
-                    scale = (_controller.page! - index).abs();
-                    scale = (1 - (scale * 0.15)).clamp(0.9, 1.0);
-                  }
-
-                  return Transform.scale(scale: scale, child: child);
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(22),
-                    gradient: LinearGradient(
-                      colors: [slide.color, slide.color.withOpacity(0.85)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.15),
-                        blurRadius: 18,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // logo bubble
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.18),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        alignment: Alignment.center,
-                        child: Image.asset(
-                          slide.assetPath,
-                          width: 36,
-                          height: 36,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      Text(
-                        slide.label,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Flexible(
-                        child: Text(
-                          slide.description,
-                          maxLines: 4,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            height: 1.4,
-                          ),
-                        ),
-                      ),
-
-                      const Spacer(),
-
-                      // optional CTA (cleaner than next/prev buttons)
-                      Align(
-                        alignment: Alignment.bottomLeft,
-                        child: TextButton(
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () {},
-                          child: const Text('Learn more →'),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 10),
-
-        // ================= DOT INDICATOR =================
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(slides.length, (index) {
-            final active = index == _currentIndex;
-
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              height: 6,
-              width: active ? 22 : 8,
-              decoration: BoxDecoration(
-                color: active
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.black26,
-                borderRadius: BorderRadius.circular(20),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
-}
-
-class FeaturedArtistSection extends StatelessWidget {
-  const FeaturedArtistSection({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final data = context.watch<AppDataState>();
-    // stable dedupe (keeps order instead of Set randomizing)
-    final artists = <String>[];
-    final ratingsByArtist = <String, double>{};
-    for (final artwork in data.artworks) {
-      if (!artists.contains(artwork.artistName)) {
-        artists.add(artwork.artistName);
-      }
-      final current = ratingsByArtist[artwork.artistName] ?? 0;
-      ratingsByArtist[artwork.artistName] = current == 0
-          ? artwork.avgRating
-          : ((current + artwork.avgRating) / 2);
-    }
-
-    if (artists.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    // sort by rating (better "featured" logic)
-    artists.sort(
-      (a, b) => (ratingsByArtist[b] ?? 0).compareTo(ratingsByArtist[a] ?? 0),
-    );
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Text(
-              'Featured artists',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const Spacer(),
-            TextButton(onPressed: () {}, child: const Text('See all')),
-          ],
-        ),
-        const SizedBox(height: 10),
-
-        SizedBox(
-          height: 204,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: artists.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final artistName = artists[index];
-              final rating = ratingsByArtist[artistName] ?? 0;
-
-              final role = index == 0
-                  ? 'Top artist'
-                  : index < 3
-                  ? 'Featured creator'
-                  : 'Bukidnon artist';
-
-              return _FeaturedArtistCard(
-                artistName: artistName,
-                rating: rating,
-                role: role,
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FeaturedArtistCard extends StatelessWidget {
-  const _FeaturedArtistCard({
-    required this.artistName,
-    required this.rating,
-    required this.role,
-  });
-
-  final String artistName;
-  final double rating;
-  final String role;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = Theme.of(context).colorScheme.primary;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: () {
-          // later: navigate to artist profile
-          // context.push('/artist/$artistName');
-        },
-        child: Container(
-          width: 185,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // avatar
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  artistName.isNotEmpty ? artistName[0] : 'A',
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 12),
-
-              Text(
-                artistName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                ),
-              ),
-
-              const SizedBox(height: 4),
-
-              Text(
-                role,
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
-              ),
-
-              const Spacer(),
-
-              // rating row
-              Row(
-                children: [
-                  Icon(Icons.star, size: 16, color: Colors.amber.shade700),
-                  const SizedBox(width: 4),
-                  Text(
-                    rating == 0 ? 'New' : rating.toStringAsFixed(1),
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 10),
-
-              SizedBox(
-                width: double.infinity,
-                height: 32,
-                child: FilledButton.tonal(
-                  onPressed: () {},
-                  style: FilledButton.styleFrom(
-                    visualDensity: VisualDensity.compact,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                  ),
-                  child: const FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text('View profile'),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class ArtistDashboardScreen extends StatelessWidget {
-  const ArtistDashboardScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthState>();
-    final data = context.watch<AppDataState>();
-    final artistId = _chatUserId(auth);
-    final commissions = data.commissions.where((item) {
-      return item.artistId == artistId || item.artistName == auth.displayName;
-    }).toList();
-    final openCommissions = commissions.where((c) {
-      final s = c.status.toLowerCase();
-      return s == 'pending' ||
-          s == 'accepted' ||
-          s == 'sketch' ||
-          s == 'in progress';
-    }).length;
-    final completedCommissions = commissions
-        .where((c) => c.status.toLowerCase() == 'completed')
-        .length;
-    final myArtworks = data.artworks
-        .where((item) => item.artistName == auth.displayName)
-        .toList();
-    final avgRating = myArtworks.isEmpty
-        ? 0
-        : myArtworks.fold<double>(
-                0,
-                (runningTotal, item) => runningTotal + item.avgRating,
-              ) /
-              myArtworks.length;
-    final myArtworkIds = myArtworks.map((a) => a.id).toSet();
-    final revenue = data.orders
-        .where(
-          (o) => o.artistId == artistId || myArtworkIds.contains(o.artworkId),
-        )
-        .fold<double>(0, (sum, item) => sum + item.total);
-    final orderCount = data.orders
-        .where(
-          (o) => o.artistId == artistId || myArtworkIds.contains(o.artworkId),
-        )
-        .length;
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Artist Dashboard',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            SizedBox(
-              width: 160,
-              child: _MetricCard(
-                label: 'Open Commissions',
-                value: '$openCommissions',
-              ),
-            ),
-            SizedBox(
-              width: 160,
-              child: _MetricCard(
-                label: 'Completed',
-                value: '$completedCommissions',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            SizedBox(
-              width: 160,
-              child: _MetricCard(
-                label: 'Revenue',
-                value: '\$${revenue.toStringAsFixed(0)}',
-              ),
-            ),
-            SizedBox(
-              width: 160,
-              child: _MetricCard(
-                label: 'Rating',
-                value: avgRating == 0 ? '-' : avgRating.toStringAsFixed(1),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            SizedBox(
-              width: 160,
-              child: _MetricCard(
-                label: 'Portfolio',
-                value: '${myArtworks.length}',
-              ),
-            ),
-            SizedBox(
-              width: 160,
-              child: _MetricCard(label: 'Orders', value: '$orderCount'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            FilledButton.icon(
-              onPressed: () => context.push('/create'),
-              icon: const Icon(Icons.add),
-              label: const Text('Upload Artwork'),
-            ),
-            OutlinedButton.icon(
-              onPressed: () => context.push('/profile'),
-              icon: const Icon(Icons.grid_view_outlined),
-              label: const Text('View Portfolio'),
-            ),
-            OutlinedButton.icon(
-              onPressed: () => context.push('/commissions'),
-              icon: const Icon(Icons.assignment_outlined),
-              label: const Text('Manage Commissions'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Text('Recent requests', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 8),
-        ...commissions.take(3).map((item) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              tileColor: Theme.of(context).colorScheme.surfaceContainerLow,
-              title: Text(item.title),
-              subtitle: Text(
-                '${item.clientName.isEmpty ? 'Buyer request' : item.clientName} · Budget \$${item.budget.toStringAsFixed(0)}',
-              ),
-              trailing: _statusChip(item.status),
-            ),
-          );
-        }),
-      ],
-    );
-  }
-}
-
-class ExploreScreen extends StatefulWidget {
-  const ExploreScreen({super.key});
-
-  @override
-  State<ExploreScreen> createState() => _ExploreScreenState();
-}
-
-class _ExploreScreenState extends State<ExploreScreen> {
-  String _query = '';
-  String _selectedCategory = 'all';
-  bool _showFilters = false;
-  String _sortBy = 'newest';
-  final _artistController = TextEditingController();
-  final _styleController = TextEditingController();
-  RangeValues _priceRange = const RangeValues(0, 6000);
-
-  @override
-  void dispose() {
-    _artistController.dispose();
-    _styleController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final data = context.watch<AppDataState>();
-    var artworks = data.artworks.where((item) {
-      final categoryMatch =
-          _selectedCategory == 'all' || item.category == _selectedCategory;
-      final artistMatch =
-          _artistController.text.trim().isEmpty ||
-          item.artistName.toLowerCase().contains(
-            _artistController.text.toLowerCase(),
-          );
-      final styleMatch =
-          _styleController.text.trim().isEmpty ||
-          item.medium?.toLowerCase().contains(
-                _styleController.text.toLowerCase(),
-              ) ==
-              true;
-      final priceMatch =
-          item.price >= _priceRange.start && item.price <= _priceRange.end;
-      final queryMatch =
-          item.title.toLowerCase().contains(_query.toLowerCase()) ||
-          item.artistName.toLowerCase().contains(_query.toLowerCase()) ||
-          item.tags.any(
-            (tag) => tag.toLowerCase().contains(_query.toLowerCase()),
-          );
-      return categoryMatch &&
-          queryMatch &&
-          artistMatch &&
-          styleMatch &&
-          priceMatch;
-    }).toList();
-
-    if (_sortBy == 'price_low') {
-      artworks.sort((a, b) => a.price.compareTo(b.price));
-    } else if (_sortBy == 'price_high') {
-      artworks.sort((a, b) => b.price.compareTo(a.price));
-    } else if (_sortBy == 'rating') {
-      artworks.sort((a, b) => b.avgRating.compareTo(a.avgRating));
-    } else if (_sortBy == 'featured') {
-      artworks.sort(
-        (a, b) => data
-            .isBoosted(b.id)
-            .toString()
-            .compareTo(data.isBoosted(a.id).toString()),
-      );
-    }
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.search),
-                  hintText: 'Search artworks, artists...',
-                  suffixIcon: _query.isNotEmpty
-                      ? IconButton(
-                          onPressed: () => setState(() => _query = ''),
-                          icon: const Icon(Icons.close),
-                        )
-                      : null,
-                ),
-                onChanged: (value) => setState(() => _query = value),
-              ),
-            ),
-            const SizedBox(width: 8),
-            IconButton(
-              onPressed: () => setState(() => _showFilters = !_showFilters),
-              icon: const Icon(Icons.tune),
-            ),
-          ],
-        ),
-        if (_showFilters) ...[
-          const SizedBox(height: 10),
-          DropdownButtonFormField<String>(
-            initialValue: _sortBy,
-            items: const [
-              DropdownMenuItem(value: 'newest', child: Text('Newest First')),
-              DropdownMenuItem(
-                value: 'price_low',
-                child: Text('Price: Low to High'),
-              ),
-              DropdownMenuItem(
-                value: 'price_high',
-                child: Text('Price: High to Low'),
-              ),
-              DropdownMenuItem(value: 'rating', child: Text('Highest Rated')),
-              DropdownMenuItem(
-                value: 'featured',
-                child: Text('Featured Priority'),
-              ),
-            ],
-            onChanged: (value) {
-              if (value != null) {
-                setState(() {
-                  _sortBy = value;
-                });
-              }
-            },
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _artistController,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Artist',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _styleController,
-            onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Style / Medium',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 8),
-          RangeSlider(
-            values: _priceRange,
-            min: 0,
-            max: 10000,
-            divisions: 20,
-            labels: RangeLabels(
-              '₱${_priceRange.start.toStringAsFixed(0)}',
-              '₱${_priceRange.end.toStringAsFixed(0)}',
-            ),
-            onChanged: (value) => setState(() => _priceRange = value),
-          ),
-        ],
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 40,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: data.categories.map((item) {
-              final selected = item == _selectedCategory;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(_categoryLabel(item)),
-                  selected: selected,
-                  onSelected: (_) => setState(() => _selectedCategory = item),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          '${artworks.length} artworks found',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        const SizedBox(height: 14),
-        GridView.builder(
-          itemCount: artworks.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            mainAxisExtent: 252,
-          ),
-          itemBuilder: (context, index) {
-            final item = artworks[index];
-            return ArtworkCard(
-              artwork: item,
-              onTap: () => context.push('/artwork/${item.id}'),
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
 
 class ArtworkDetailScreen extends StatefulWidget {
   const ArtworkDetailScreen({super.key, required this.id});
@@ -2714,7 +1678,7 @@ class _ArtworkDetailScreenState extends State<ArtworkDetailScreen> {
           spacing: 8,
           children: [
             Chip(
-              label: Text(_categoryLabel(artwork.category)),
+              label: Text(categoryLabel(artwork.category)),
               visualDensity: VisualDensity.compact,
             ),
             Chip(
@@ -2975,7 +1939,7 @@ class _ArtworkDetailScreenState extends State<ArtworkDetailScreen> {
                         child: OutlinedButton.icon(
                           onPressed: acceptingCommissions
                               ? () => context.push(
-                                  _commissionRoute(
+                                  buildCommissionRoute(
                                     artistName: artwork.artistName,
                                     artistId: artwork.artistId,
                                     artworkId: artwork.id,
@@ -3014,7 +1978,7 @@ class _ArtworkDetailScreenState extends State<ArtworkDetailScreen> {
                       child: OutlinedButton.icon(
                         onPressed: acceptingCommissions
                             ? () => context.push(
-                                _commissionRoute(
+                                buildCommissionRoute(
                                   artistName: artwork.artistName,
                                   artistId: artwork.artistId,
                                   artworkId: artwork.id,
@@ -3381,7 +2345,7 @@ class _CreateArtworkScreenState extends State<CreateArtworkScreen> {
                 .map(
                   (item) => DropdownMenuItem(
                     value: item,
-                    child: Text(_categoryLabel(item)),
+                    child: Text(categoryLabel(item)),
                   ),
                 )
                 .toList(),
@@ -3720,537 +2684,6 @@ class _CreateArtworkScreenState extends State<CreateArtworkScreen> {
   }
 }
 
-class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
-
-  @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
-}
-
-class _ProfileScreenState extends State<ProfileScreen> {
-  bool _showArtworks = true;
-
-  @override
-  Widget build(BuildContext context) {
-    final auth = context.watch<AuthState>();
-    final data = context.watch<AppDataState>();
-    final displayName = auth.displayName;
-    final username = auth.username;
-    final bio = auth.bio;
-    final currentUserId = auth.currentUserId;
-    final userInitial = displayName.isEmpty ? 'A' : displayName[0];
-    final works = data.artworks
-        .where(
-          (item) =>
-              (currentUserId != null && item.artistId == currentUserId) ||
-              item.artistName == displayName,
-        )
-        .toList();
-    final averageRating = works.isEmpty
-        ? 0
-        : works.fold<double>(
-                0,
-                (runningTotal, item) => runningTotal + item.avgRating,
-              ) /
-              works.length;
-    final salesCount = works.where((w) => data.isSold(w.id)).length;
-    final commissions = data.commissions;
-
-    final aboutText = bio.isEmpty
-        ? 'Share a bit about your creative journey, style, or local craftsmanship.'
-        : bio;
-
-    return ListView(
-      padding: const EdgeInsets.all(0),
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Theme.of(context).colorScheme.primary,
-                Theme.of(context).colorScheme.primary.withOpacity(0.82),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Profile',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => context.push('/edit-profile'),
-                        icon: const Icon(Icons.edit, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Container(
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        padding: const EdgeInsets.fromLTRB(16, 66, 16, 16),
-                        child: Column(
-                          children: [
-                            const SizedBox(height: 36),
-                            Text(
-                              displayName,
-                              style: Theme.of(context).textTheme.headlineSmall
-                                  ?.copyWith(color: Colors.black87),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              username,
-                              style: const TextStyle(
-                                color: Colors.black54,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            Wrap(
-                              alignment: WrapAlignment.center,
-                              spacing: 10,
-                              runSpacing: 8,
-                              children: [
-                                Chip(
-                                  label: Text(
-                                    auth.isAdmin
-                                        ? 'Admin'
-                                        : auth.isVerifiedArtist
-                                        ? 'Verified Artist'
-                                        : auth.isArtist
-                                        ? 'Artist'
-                                        : 'Buyer',
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                                const SizedBox(width: 10),
-                                Chip(
-                                  label: Text(
-                                    auth.isArtist ? 'Creator' : 'Collector',
-                                  ),
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                  ),
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                                if (auth.isArtist)
-                                  Chip(
-                                    label: Text(
-                                      auth.acceptingCommissions
-                                          ? 'Accepting Commissions'
-                                          : 'Commission Closed',
-                                    ),
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                    ),
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        top: -44,
-                        child: Center(
-                          child: Container(
-                            width: 88,
-                            height: 88,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF1E5CE),
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.12),
-                                  blurRadius: 18,
-                                  offset: const Offset(0, 10),
-                                ),
-                              ],
-                            ),
-                            alignment: Alignment.center,
-                            clipBehavior: Clip.antiAlias,
-                            child: auth.photoUrl.isEmpty
-                                ? Text(
-                                    userInitial,
-                                    style: const TextStyle(
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.black87,
-                                    ),
-                                  )
-                                : Image.network(
-                                    auth.photoUrl,
-                                    width: 88,
-                                    height: 88,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) {
-                                      return Text(
-                                        userInitial,
-                                        style: const TextStyle(
-                                          fontSize: 36,
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.black87,
-                                        ),
-                                      );
-                                    },
-                                  ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('About', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  aboutText,
-                  style: const TextStyle(color: Colors.black87, height: 1.5),
-                ),
-              ),
-              const SizedBox(height: 16),
-              // Action Buttons Section
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  SizedBox(
-                    width: 160,
-                    child: OutlinedButton.icon(
-                      onPressed: () => context.push('/orders'),
-                      icon: const Icon(Icons.shopping_bag_outlined),
-                      label: const Text('Orders'),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 160,
-                    child: OutlinedButton.icon(
-                      onPressed: () => context.push('/payments'),
-                      icon: const Icon(Icons.payment_outlined),
-                      label: const Text('Payments'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Artist Application Logic
-              if (!auth.isArtist &&
-                  !auth.verificationSubmitted &&
-                  !auth.artistApplicationRejected)
-                FilledButton.icon(
-                  onPressed: () => context.push('/become-artist'),
-                  icon: const Icon(Icons.brush_outlined),
-                  label: const Text('Become an Artist'),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                )
-              else if (auth.hasPendingArtistApplication)
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/verification'),
-                  icon: const Icon(Icons.pending_actions_rounded),
-                  label: const Text('Application Pending'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                    foregroundColor: const Color(0xFFB71B1B),
-                    side: const BorderSide(color: Color(0xFFB71B1B)),
-                  ),
-                )
-              else if (auth.artistApplicationRejected)
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/verification'),
-                  icon: const Icon(Icons.assignment_late_outlined),
-                  label: const Text('Application Feedback'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                )
-              else if (auth.isAdmin)
-                OutlinedButton.icon(
-                  onPressed: () => context.push('/admin'),
-                  icon: const Icon(Icons.admin_panel_settings_outlined),
-                  label: const Text('Admin Panel'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                ),
-              const SizedBox(height: 16),
-              Text('Stats', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Wrap(
-                  alignment: WrapAlignment.spaceBetween,
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: [
-                    _StatColumn(label: 'Artworks', value: '${works.length}'),
-                    _StatColumn(label: 'Sales', value: '$salesCount'),
-                    _StatColumn(
-                      label: 'Rating',
-                      value: averageRating == 0
-                          ? '-'
-                          : averageRating.toStringAsFixed(1),
-                    ),
-                    _StatColumn(
-                      label: 'Commissions',
-                      value:
-                          '${commissions.where((item) => item.artistId == currentUserId || item.clientId == currentUserId || item.artistName == displayName || item.clientName == displayName).length}',
-                    ),
-                  ],
-                ),
-              ),
-              if (auth.isArtist) ...[
-                const SizedBox(height: 16),
-                Text(
-                  'Portfolio',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 10),
-                SegmentedButton<bool>(
-                  segments: const [
-                    ButtonSegment<bool>(
-                      value: true,
-                      label: Text('Artworks'),
-                      icon: Icon(Icons.grid_view_outlined),
-                    ),
-                    ButtonSegment<bool>(
-                      value: false,
-                      label: Text('Commissions'),
-                      icon: Icon(Icons.assignment_outlined),
-                    ),
-                  ],
-                  selected: {_showArtworks},
-                  onSelectionChanged: (value) {
-                    setState(() {
-                      _showArtworks = value.first;
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-                if (_showArtworks)
-                  if (works.isEmpty)
-                    const _ProfileEmptyState(
-                      title: 'No artworks yet',
-                      subtitle:
-                          'Upload a piece to start building your portfolio.',
-                      cta: 'Upload New Artwork',
-                      icon: Icons.image_outlined,
-                      route: '/create',
-                    )
-                  else
-                    ...works.map((item) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: ArtworkCard(
-                          artwork: item,
-                          onTap: () => context.push('/artwork/${item.id}'),
-                        ),
-                      );
-                    })
-                else if (commissions
-                    .where(
-                      (item) =>
-                          item.artistId == currentUserId ||
-                          item.artistName == displayName,
-                    )
-                    .isEmpty)
-                  const _ProfileEmptyState(
-                    title: 'No commission work yet',
-                    subtitle:
-                        'Incoming commission requests and completed projects will appear here.',
-                    cta: 'Open Messages',
-                    icon: Icons.chat_bubble_outline,
-                    route: '/messages',
-                  )
-                else
-                  ...commissions
-                      .where(
-                        (item) =>
-                            item.artistId == currentUserId ||
-                            item.artistName == displayName,
-                      )
-                      .map((item) {
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            title: Text(item.title),
-                            subtitle: Text(
-                              item.clientName.isEmpty
-                                  ? item.brief
-                                  : '${item.clientName} · ${item.brief}',
-                            ),
-                            trailing: _statusChip(item.status),
-                          ),
-                        );
-                      }),
-              ],
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatColumn extends StatelessWidget {
-  const _StatColumn({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.black54,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ProfileEmptyState extends StatelessWidget {
-  const _ProfileEmptyState({
-    required this.title,
-    required this.subtitle,
-    required this.cta,
-    required this.icon,
-    required this.route,
-  });
-
-  final String title;
-  final String subtitle;
-  final String cta;
-  final IconData icon;
-  final String route;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: Colors.black45),
-          ),
-          const SizedBox(height: 14),
-          Text(title, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 6),
-          Text(subtitle, style: const TextStyle(color: Colors.black54)),
-          const SizedBox(height: 12),
-          FilledButton(onPressed: () => context.push(route), child: Text(cta)),
-        ],
-      ),
-    );
-  }
-}
-
-class _EmptyMessageCard extends StatelessWidget {
-  const _EmptyMessageCard({required this.title, required this.subtitle});
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 6),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _ImageUploadPlaceholder extends StatelessWidget {
   const _ImageUploadPlaceholder({
     this.title = 'Tap to add image',
@@ -4438,7 +2871,7 @@ class _SmartPricingHelperScreenState extends State<_SmartPricingHelperScreen> {
                 .map(
                   (item) => DropdownMenuItem(
                     value: item,
-                    child: Text(_categoryLabel(item)),
+                    child: Text(categoryLabel(item)),
                   ),
                 )
                 .toList(),
@@ -4542,7 +2975,7 @@ class _SmartPricingHelperScreenState extends State<_SmartPricingHelperScreen> {
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Text(
-                'Market Comparison\nAverage price for ${_categoryLabel(_category).toLowerCase()}: ${currency.format(_result!.averageMarketPrice)}',
+                'Market Comparison\nAverage price for ${categoryLabel(_category).toLowerCase()}: ${currency.format(_result!.averageMarketPrice)}',
               ),
             ),
             const SizedBox(height: 14),
@@ -4680,12 +3113,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _bioController = TextEditingController(
     text: 'Portrait and digital artist focused on vivid color stories.',
   );
+  final _pinnedController = TextEditingController();
   final ImagePicker _imagePicker = ImagePicker();
   Uint8List? _profilePhotoBytes;
   String _profilePhotoExtension = 'jpg';
   bool _portfolioPack = false;
   bool _featuredBoost = false;
   bool _acceptingCommissions = true;
+  bool _introExpanded = true;
   bool _profileLoaded = false;
   bool _savingProfile = false;
 
@@ -4745,11 +3180,28 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
+  InputDecoration _fieldDecoration(String label, {String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      alignLabelWithHint: hint != null,
+      border: const OutlineInputBorder(),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: EditorialColors.tribalRed.withValues(alpha: 0.95)),
+      ),
+      floatingLabelStyle: GoogleFonts.inter(
+        fontWeight: FontWeight.w600,
+        color: EditorialColors.tribalRed,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _usernameController.dispose();
     _bioController.dispose();
+    _pinnedController.dispose();
     super.dispose();
   }
 
@@ -4763,225 +3215,410 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       _portfolioPack = auth.hasPortfolioPack;
       _featuredBoost = auth.hasFeaturedBoost;
       _acceptingCommissions = auth.acceptingCommissions;
+      _pinnedController.text = auth.pinnedDetails.join('\n');
       _profileLoaded = true;
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Edit profile', style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 12),
-        Center(
-          child: Stack(
-            children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: const Color(0xFFF1E5CE),
-                child: _profilePhotoBytes != null
-                    ? ClipOval(
-                        child: Image.memory(
-                          _profilePhotoBytes!,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : auth.photoUrl.isNotEmpty
-                    ? ClipOval(
-                        child: Image.network(
-                          auth.photoUrl,
-                          width: 80,
-                          height: 80,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.person_outline, size: 36),
-                        ),
-                      )
-                    : ClipOval(
-                        child: const Icon(Icons.person_outline, size: 36),
-                      ),
-              ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(99),
-                    border: Border.all(color: Colors.white, width: 2),
+    final topPadding = MediaQuery.paddingOf(context).top;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(gradient: BukidnonGradients.pageAmbient),
+      child: ListView(
+        padding: EdgeInsets.only(bottom: 24),
+        children: [
+          SizedBox(
+            height: 200 + topPadding,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Container(
+                  height: 154 + topPadding,
+                  width: double.infinity,
+                  padding: EdgeInsets.only(top: topPadding),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        EditorialColors.tribalRed,
+                        EditorialColors.tribalMaroon,
+                        Color(0xFFE85C4A),
+                      ],
+                    ),
                   ),
-                  child: IconButton(
-                    padding: EdgeInsets.zero,
-                    onPressed: _showPhotoSourceOptions,
-                    icon: const Icon(
-                      Icons.camera_alt_outlined,
-                      size: 14,
-                      color: Colors.white,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => context.pop(),
+                        icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white.withValues(alpha: 0.95)),
+                        tooltip: 'Back',
+                      ),
+                      Expanded(
+                        child: Text(
+                          'Edit profile',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Positioned(
+                  left: 20,
+                  bottom: 44,
+                  child: Hero(
+                    tag: 'profile_avatar_${auth.currentUserId ?? 'me'}',
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 4),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.14),
+                            blurRadius: 12,
+                          ),
+                        ],
+                      ),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          CircleAvatar(
+                            radius: 44,
+                            backgroundColor: EditorialColors.surfaceCream,
+                            child: _profilePhotoBytes != null
+                                ? ClipOval(
+                                    child: Image.memory(
+                                      _profilePhotoBytes!,
+                                      width: 88,
+                                      height: 88,
+                                      fit: BoxFit.cover,
+                                    ),
+                                  )
+                                : auth.photoUrl.isNotEmpty
+                                ? ClipOval(
+                                    child: Image.network(
+                                      auth.photoUrl,
+                                      width: 88,
+                                      height: 88,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          const Icon(Icons.person_outline, size: 38),
+                                    ),
+                                  )
+                                : const Icon(Icons.person_outline, size: 38),
+                          ),
+                          Positioned(
+                            right: -2,
+                            bottom: -2,
+                            child: Material(
+                              color: EditorialColors.tribalRed,
+                              shape: const CircleBorder(),
+                              child: InkWell(
+                                customBorder: const CircleBorder(),
+                                onTap: _showPhotoSourceOptions,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(6),
+                                  child: Icon(
+                                    Icons.photo_camera_rounded,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Center(
-          child: OutlinedButton.icon(
-            onPressed: _showPhotoSourceOptions,
-            icon: const Icon(Icons.upload_outlined),
-            label: const Text('Upload Photo'),
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (auth.isArtist || auth.isAdmin)
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _acceptingCommissions,
-            title: const Text('Accept commissions'),
-            subtitle: const Text(
-              'Turn this off to disable commission requests on your artworks.',
+                Positioned(
+                  right: 16,
+                  bottom: 114,
+                  child: IconButton(
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.92),
+                      foregroundColor: EditorialColors.muted,
+                    ),
+                    onPressed: _showPhotoSourceOptions,
+                    icon: const Icon(Icons.camera_alt_outlined, size: 22),
+                  ),
+                ),
+              ],
             ),
-            onChanged: (value) {
-              setState(() {
-                _acceptingCommissions = value;
-              });
-            },
           ),
-        if (auth.isArtist || auth.isAdmin) const SizedBox(height: 12),
-        TextField(
-          controller: _nameController,
-          decoration: const InputDecoration(
-            labelText: 'Name',
-            border: OutlineInputBorder(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _showPhotoSourceOptions,
+                icon: Icon(Icons.upload_outlined, size: 18, color: EditorialColors.tribalRed),
+                label: Text(
+                  'Change profile photo',
+                  style: GoogleFonts.inter(
+                    fontWeight: FontWeight.w600,
+                    color: EditorialColors.tribalRed,
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _usernameController,
-          decoration: const InputDecoration(
-            labelText: 'Username',
-            border: OutlineInputBorder(),
+          Divider(height: 1, color: EditorialColors.border.withValues(alpha: 0.85)),
+          InkWell(
+            onTap: () => setState(() => _introExpanded = !_introExpanded),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(18, 16, 12, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Intro',
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        color: EditorialColors.ink,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _introExpanded ? Icons.expand_less : Icons.expand_more,
+                    color: EditorialColors.muted,
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _bioController,
-          maxLines: 4,
-          decoration: const InputDecoration(
-            labelText: 'Bio',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 8),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: Icon(
-            auth.isVerifiedArtist ? Icons.verified : Icons.verified_outlined,
-            color: auth.isVerifiedArtist ? Colors.green : Colors.black45,
-          ),
-          title: const Text('Artist verification'),
-          subtitle: Text(
-            auth.isVerifiedArtist
-                ? 'Verified through the admin review flow.'
-                : 'Managed through the artist application review process.',
-          ),
-        ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _portfolioPack,
-          title: const Text('Extended Portfolio Pack'),
-          subtitle: const Text('PHP 99 unlock'),
-          onChanged: (value) => setState(() => _portfolioPack = value),
-        ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _featuredBoost,
-          title: const Text('Featured Artwork Boost'),
-          subtitle: const Text('PHP 20/day'),
-          onChanged: (value) => setState(() => _featuredBoost = value),
-        ),
-        const SizedBox(height: 16),
-        FilledButton(
-          onPressed: _savingProfile
-              ? null
-              : () async {
-                  setState(() => _savingProfile = true);
-                  try {
-                    var resolvedPhotoUrl = auth.photoUrl;
-                    if (_profilePhotoBytes != null) {
-                      final userId = auth.currentUserId ?? '';
-                      if (userId.isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Sign in again before uploading a profile image.',
-                            ),
+          if (_introExpanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Icon(Icons.waving_hand_outlined, color: EditorialColors.muted),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _bioController,
+                          maxLines: 5,
+                          style: GoogleFonts.inter(color: EditorialColors.charcoal, height: 1.45),
+                          decoration: _fieldDecoration(
+                            'Bio',
+                            hint: 'What should people know about you?',
                           ),
-                        );
-                        return;
-                      }
-                      if (!_supabaseImageService.isConfigured) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Fill the Supabase credentials in .env before uploading a profile image.',
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-                      resolvedPhotoUrl = await _supabaseImageService
-                          .uploadProfileImage(
-                            userId: userId,
-                            bytes: _profilePhotoBytes!,
-                            fileExtension: _profilePhotoExtension,
-                          );
-                    }
-
-                    await auth.saveProfile(
-                      name: _nameController.text,
-                      username: _usernameController.text,
-                      bio: _bioController.text,
-                      photoUrl: resolvedPhotoUrl,
-                      portfolioPack: _portfolioPack,
-                    featuredBoost: _featuredBoost,
-                    acceptingCommissions: _acceptingCommissions,
-                  );
-                    if (!context.mounted) {
-                      return;
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Profile updated.')),
-                    );
-                    context.go('/profile');
-                  } catch (_) {
-                    if (!context.mounted) {
-                      return;
-                    }
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Profile could not be updated right now.',
                         ),
                       ),
-                    );
-                  } finally {
-                    if (mounted) {
-                      setState(() => _savingProfile = false);
-                    }
-                  }
-                },
-          child: _savingProfile
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Save changes'),
-        ),
-      ],
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: Icon(Icons.push_pin_outlined, color: EditorialColors.tribalRed),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _pinnedController,
+                          maxLines: 8,
+                          style: GoogleFonts.inter(color: EditorialColors.charcoal, height: 1.45),
+                          decoration: _fieldDecoration(
+                            'Pinned to profile',
+                            hint:
+                                'One line each — schools, exhibits, organizations, links…',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+            child: Text(
+              'Account',
+              style: GoogleFonts.inter(
+                fontWeight: FontWeight.w800,
+                fontSize: 17,
+                color: EditorialColors.ink,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+            child: TextField(
+              controller: _nameController,
+              style: GoogleFonts.inter(color: EditorialColors.charcoal),
+              decoration: _fieldDecoration('Name'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+            child: TextField(
+              controller: _usernameController,
+              style: GoogleFonts.inter(color: EditorialColors.charcoal),
+              decoration: _fieldDecoration('Username'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (auth.isArtist || auth.isAdmin)
+            SwitchListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 18),
+              value: _acceptingCommissions,
+              title: Text('Accept commissions', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              subtitle: Text(
+                'Turn this off to disable commission requests on your artworks.',
+                style: GoogleFonts.inter(fontSize: 13, color: EditorialColors.muted),
+              ),
+              activeThumbColor: EditorialColors.tribalRed,
+              onChanged: (value) {
+                setState(() {
+                  _acceptingCommissions = value;
+                });
+              },
+            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 0),
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                auth.isVerifiedArtist ? Icons.verified : Icons.verified_outlined,
+                color: auth.isVerifiedArtist ? EditorialColors.gold : EditorialColors.muted,
+              ),
+              title: Text('Artist verification', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+              subtitle: Text(
+                auth.isVerifiedArtist
+                    ? 'Verified through the admin review flow.'
+                    : 'Managed through the artist application review process.',
+                style: GoogleFonts.inter(fontSize: 13, color: EditorialColors.muted),
+              ),
+            ),
+          ),
+          SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18),
+            value: _portfolioPack,
+            title: Text('Extended Portfolio Pack', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            subtitle: Text('PHP 99 unlock', style: GoogleFonts.inter(fontSize: 13, color: EditorialColors.muted)),
+            activeThumbColor: EditorialColors.tribalRed,
+            onChanged: (value) => setState(() => _portfolioPack = value),
+          ),
+          SwitchListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 18),
+            value: _featuredBoost,
+            title: Text('Featured Artwork Boost', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            subtitle: Text('PHP 20/day', style: GoogleFonts.inter(fontSize: 13, color: EditorialColors.muted)),
+            activeThumbColor: EditorialColors.tribalRed,
+            onChanged: (value) => setState(() => _featuredBoost = value),
+          ),
+          const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 0),
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: EditorialColors.tribalRed,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 48),
+              ),
+              onPressed: _savingProfile
+                  ? null
+                  : () async {
+                      setState(() => _savingProfile = true);
+                      try {
+                        var resolvedPhotoUrl = auth.photoUrl;
+                        if (_profilePhotoBytes != null) {
+                          final userId = auth.currentUserId ?? '';
+                          if (userId.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Sign in again before uploading a profile image.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          if (!_supabaseImageService.isConfigured) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Fill the Supabase credentials in .env before uploading a profile image.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+                          resolvedPhotoUrl = await _supabaseImageService
+                              .uploadProfileImage(
+                                userId: userId,
+                                bytes: _profilePhotoBytes!,
+                                fileExtension: _profilePhotoExtension,
+                              );
+                        }
+
+                        await auth.saveProfile(
+                          name: _nameController.text,
+                          username: _usernameController.text,
+                          bio: _bioController.text,
+                          photoUrl: resolvedPhotoUrl,
+                          portfolioPack: _portfolioPack,
+                          featuredBoost: _featuredBoost,
+                          acceptingCommissions: _acceptingCommissions,
+                          pinnedDetails: _pinnedController.text
+                              .split(RegExp(r'\r?\n'))
+                              .map((s) => s.trim())
+                              .where((s) => s.isNotEmpty)
+                              .toList(),
+                        );
+                        if (!context.mounted) {
+                          return;
+                        }
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Profile updated.')),
+                        );
+                        context.go('/profile');
+                      } catch (_) {
+                        if (!context.mounted) {
+                          return;
+                        }
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Profile could not be updated right now.',
+                            ),
+                          ),
+                        );
+                      } finally {
+                        if (mounted) {
+                          setState(() => _savingProfile = false);
+                        }
+                      }
+                    },
+              child: _savingProfile
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text('Save changes', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -5008,50 +3645,6 @@ ChatContact _artworkContact(Artwork artwork) {
   return _artistAliasContact(artwork.artistName);
 }
 
-String _roleLabel(AuthState auth) {
-  if (auth.isAdmin) {
-    return 'Admin';
-  }
-  if (auth.isArtist) {
-    return 'Artist';
-  }
-  return 'Buyer';
-}
-
-String _chatUserId(AuthState auth) {
-  return auth.currentUserId ?? ChatContact.aliasUserIdForName(auth.displayName);
-}
-
-String _commissionRoute({
-  required String artistName,
-  String artistId = '',
-  String artworkId = '',
-  String artworkTitle = '',
-}) {
-  final artist = Uri.encodeComponent(artistName);
-  final artistUserId = Uri.encodeComponent(artistId);
-  final artId = Uri.encodeComponent(artworkId);
-  final title = Uri.encodeComponent(artworkTitle);
-  return '/commission?artist=$artist&artistId=$artistUserId&artworkId=$artId&artworkTitle=$title';
-}
-
-String _categoryLabel(String value) {
-  return value
-      .split('_')
-      .map(
-        (part) => part.isEmpty
-            ? part
-            : '${part[0].toUpperCase()}${part.substring(1)}',
-      )
-      .join(' ');
-}
-
-List<Artwork> _filterByCategory(List<Artwork> artworks, String category) {
-  if (category == 'all') {
-    return artworks;
-  }
-  return artworks.where((item) => item.category == category).toList();
-}
 
 Future<void> _sendInquiryRequest({
   required BuildContext context,
@@ -5134,9 +3727,9 @@ Future<void> _sendInquiryRequest({
 
   await _chatService.sendMessage(
     conversationId: conversationId,
-    senderId: _chatUserId(auth),
+    senderId: chatUserIdFor(auth),
     senderName: auth.displayName,
-    senderRole: _roleLabel(auth),
+    senderRole: roleLabel(auth),
     recipient: contact,
     text: message,
   );
@@ -5188,7 +3781,7 @@ Future<String?> _prepareConversation({
   return _chatService.ensureConversation(
     currentUserId: currentUserId,
     currentUserName: auth.displayName,
-    currentUserRole: _roleLabel(auth),
+    currentUserRole: roleLabel(auth),
     otherUser: otherUser,
   );
 }
@@ -5447,8 +4040,10 @@ class MessagesScreen extends StatelessWidget {
     }
 
     final dateFmt = DateFormat('MMM d, h:mm a');
-    return Stack(
-      children: [
+    return ColoredBox(
+      color: EditorialColors.pageCream,
+      child: Stack(
+        children: [
         StreamBuilder<List<ChatConversationPreview>>(
           stream: _chatService.watchConversationsForUser(userId),
           builder: (context, snapshot) {
@@ -5489,69 +4084,101 @@ class MessagesScreen extends StatelessWidget {
                   role: item.otherRole,
                 );
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: CircleAvatar(child: Text(item.initial)),
-                    title: Text(item.otherName),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          item.lastMessage,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: AppRadii.circularLg(),
+                      onTap: () =>
+                          context.push(_chatRoute(item.conversationId, contact)),
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: AppRadii.circularLg(),
+                          border: Border.all(color: EditorialColors.border),
+                          boxShadow: AppShadows.card,
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${item.otherRole} · ${dateFmt.format(item.updatedAt)}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        if (statusByConversation[item.conversationId] !=
-                            null) ...[
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: EditorialColors.tribalRed
+                                  .withValues(alpha: 0.12),
+                              foregroundColor: EditorialColors.tribalRed,
+                              child: Text(item.initial),
                             ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Text(
-                              statusByConversation[item.conversationId]!,
-                              style: Theme.of(context).textTheme.labelSmall,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    trailing: item.hasUnread
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(99),
-                            ),
-                            child: Text(
-                              '${item.unreadCount}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
+                            title: Text(
+                              item.otherName,
+                              style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-                          )
-                        : null,
-                    onTap: () =>
-                        context.push(_chatRoute(item.conversationId, contact)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  item.lastMessage,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '${item.otherRole} · ${dateFmt.format(item.updatedAt)}',
+                                  style: Theme.of(context).textTheme.bodySmall,
+                                ),
+                                if (statusByConversation[item.conversationId] !=
+                                    null) ...[
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                      borderRadius: BorderRadius.circular(99),
+                                    ),
+                                    child: Text(
+                                      statusByConversation[
+                                          item.conversationId]!,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            trailing: item.hasUnread
+                                ? Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .primary,
+                                      borderRadius: BorderRadius.circular(99),
+                                    ),
+                                    child: Text(
+                                      '${item.unreadCount}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 );
               },
@@ -5561,14 +4188,57 @@ class MessagesScreen extends StatelessWidget {
         Positioned(
           right: 16,
           bottom: 16,
-          child: FloatingActionButton(
+          child: FloatingActionButton.extended(
+            elevation: 2,
             onPressed: () => _showNewMessageSheet(context),
-            child: const Icon(Icons.add),
+            icon: const Icon(Icons.edit_rounded),
+            label: Text('New', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
           ),
         ),
       ],
+      ),
     );
   }
+}
+
+bool _calendarSameDay(DateTime a, DateTime b) =>
+    a.year == b.year && a.month == b.month && a.day == b.day;
+
+Widget _chatDateChip(DateTime sentAt) {
+  final today = DateTime.now();
+  final startOfToday = DateTime(today.year, today.month, today.day);
+  final day = DateTime(sentAt.year, sentAt.month, sentAt.day);
+  late final String label;
+  if (day == startOfToday) {
+    label = 'Today';
+  } else if (day ==
+      startOfToday.subtract(const Duration(days: 1))) {
+    label = 'Yesterday';
+  } else if (startOfToday.difference(day).inDays < 364) {
+    label = DateFormat('EEEE · MMMM d').format(sentAt);
+  } else {
+    label = DateFormat('EEEE · MMM d, yyyy').format(sentAt);
+  }
+
+  return Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+    decoration: BoxDecoration(
+      color: EditorialColors.surfaceCream.withValues(alpha: 0.94),
+      borderRadius: BorderRadius.circular(999),
+      border:
+          Border.all(color: EditorialColors.border.withValues(alpha: 0.88)),
+      boxShadow: AppShadows.card,
+    ),
+    child: Text(
+      label,
+      style: GoogleFonts.inter(
+        fontSize: 11.5,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.5,
+        color: EditorialColors.muted.withValues(alpha: 0.95),
+      ),
+    ),
+  );
 }
 
 class ChatScreen extends StatefulWidget {
@@ -5734,193 +4404,587 @@ class _ChatScreenState extends State<ChatScreen> {
     final chatName = participant?.displayName ?? 'Conversation';
     final chatInitial = participant?.initial ?? 'C';
 
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: const Color(0xFFF1E5CE),
-                child: Text(
-                  chatInitial,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  chatName,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (participant != null)
-                Text(
-                  participant.role,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: StreamBuilder<List<ChatMessage>>(
-            stream: _chatService.watchMessages(widget.conversationId),
-            builder: (context, snapshot) {
-              final messages = snapshot.data ?? const <ChatMessage>[];
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                _markRead();
-              });
-
-              if (messages.isEmpty) {
-                return const Center(
-                  child: Text('No messages yet. Start the conversation below.'),
-                );
-              }
-
-              return ListView.builder(
-                padding: const EdgeInsets.all(12),
-                itemCount: messages.length,
-                itemBuilder: (context, index) {
-                  final item = messages[index];
-                  if (item.isSystemNotification) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: Center(
-                        child: Container(
-                          constraints: const BoxConstraints(maxWidth: 280),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            item.text,
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
+    return ColoredBox(
+      color: EditorialColors.pageCream,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Material(
+            color: Colors.white,
+            elevation: 1,
+            shadowColor: EditorialColors.border.withValues(alpha: 0.55),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 12, 12),
+              child: Row(
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          EditorialColors.tribalGold.withValues(alpha: 0.9),
+                          EditorialColors.tribalRed.withValues(alpha: 0.95),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      boxShadow: AppShadows.card,
+                    ),
+                    padding: const EdgeInsets.all(3),
+                    child: CircleAvatar(
+                      radius: 22,
+                      backgroundColor: Colors.white,
+                      child: Text(
+                        chatInitial,
+                        style: GoogleFonts.inter(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 17,
+                          color: EditorialColors.tribalMaroon,
                         ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          chatName,
+                          style: GoogleFonts.playfairDisplay(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 19,
+                            height: 1.1,
+                            color: EditorialColors.ink,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            if (participant != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: EditorialColors.blush.withValues(alpha: 0.55),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color:
+                                        EditorialColors.tribalRed.withValues(alpha: 0.22),
+                                  ),
+                                ),
+                                  child: Text(
+                                    participant.role.toUpperCase(),
+                                  style: GoogleFonts.inter(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 10,
+                                    letterSpacing: 0.95,
+                                    color: EditorialColors.tribalRed,
+                                  ),
+                                ),
+                              ),
+                            if (relatedCommission != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: EditorialColors.amberHighlight.withValues(alpha: 0.18),
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color:
+                                        EditorialColors.border.withValues(alpha: 0.75),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.palette_outlined,
+                                      size: 14,
+                                      color: EditorialColors.goldSoft.withValues(alpha: 0.95),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Commission • ${relatedCommission.status}',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: EditorialColors.charcoal,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    EditorialColors.tribalCream.withValues(alpha: 0.52),
+                    EditorialColors.pageCream,
+                    Colors.white.withValues(alpha: 0.97),
+                  ],
+                ),
+              ),
+              child: StreamBuilder<List<ChatMessage>>(
+                stream: _chatService.watchMessages(widget.conversationId),
+                builder: (context, snapshot) {
+                  final messages = snapshot.data ?? const <ChatMessage>[];
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _markRead();
+                  });
+
+                  if (messages.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(36),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(22),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color:
+                                  EditorialColors.tribalRed.withValues(alpha: 0.08),
+                              border: Border.all(
+                                color:
+                                    EditorialColors.tribalRed.withValues(alpha: 0.15),
+                              ),
+                              boxShadow: AppShadows.card,
+                            ),
+                            child: Icon(
+                              Icons.auto_awesome_mosaic_rounded,
+                              size: 48,
+                              color: EditorialColors.tribalRed.withValues(alpha: 0.92),
+                            ),
+                          ),
+                          const SizedBox(height: 18),
+                          Text(
+                            'No messages yet',
+                            style: GoogleFonts.playfairDisplay(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 23,
+                              color: EditorialColors.ink,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            'Drop a greeting, paste a Pinterest board link, '
+                            'or clarify what you\'d love to commission — everything '
+                            'stays inside this encrypted thread.',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              height: 1.55,
+                              color: EditorialColors.muted,
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   }
-                  final mine = item.senderId == currentUserId;
-                  return Align(
-                    alignment: mine
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      constraints: const BoxConstraints(maxWidth: 270),
-                      decoration: BoxDecoration(
-                        color: mine
-                            ? Theme.of(context).colorScheme.primaryContainer
-                            : Theme.of(context).colorScheme.surfaceContainer,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (!mine)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Text(
-                                item.senderName,
-                                style: Theme.of(context).textTheme.bodySmall
-                                    ?.copyWith(fontWeight: FontWeight.w700),
+
+                  final maxBubble = MediaQuery.sizeOf(context).width * 0.78;
+
+                  return ListView.builder(
+                    padding:
+                        const EdgeInsets.fromLTRB(14, 14, 14, 8),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final item = messages[index];
+                      final prev = index > 0 ? messages[index - 1] : null;
+                      final showDayChip = prev == null ||
+                          !_calendarSameDay(item.sentAt, prev.sentAt);
+
+                      if (item.isSystemNotification) {
+                        return Padding(
+                          padding: EdgeInsets.only(
+                            bottom: 12,
+                            top: index == 0 ? 4 : (showDayChip ? 6 : 0),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              if (showDayChip)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 12),
+                                  child:
+                                      Center(child: _chatDateChip(item.sentAt)),
+                                ),
+                              Center(
+                                child: Container(
+                                  constraints:
+                                      const BoxConstraints(maxWidth: 320),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(
+                                      color: EditorialColors.border
+                                          .withValues(alpha: 0.85),
+                                    ),
+                                    boxShadow: AppShadows.card,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.info_outline_rounded,
+                                        size: 18,
+                                        color:
+                                            EditorialColors.tribalGold.withValues(alpha: 0.92),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          item.text,
+                                          textAlign: TextAlign.center,
+                                          style: GoogleFonts.inter(
+                                            fontSize: 13,
+                                            height: 1.45,
+                                            fontWeight: FontWeight.w600,
+                                            color: EditorialColors.charcoal,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+
+                      final mine = item.senderId == currentUserId;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: mine ? 4 : 6,
+                          top: index == 0
+                              ? 2
+                              : (showDayChip ? 14 : (mine ? 2 : 4)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: mine
+                              ? CrossAxisAlignment.end
+                              : CrossAxisAlignment.start,
+                          children: [
+                            if (showDayChip)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child:
+                                    Center(child: _chatDateChip(item.sentAt)),
+                              ),
+                            Align(
+                              alignment: mine
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
+                              child: ConstrainedBox(
+                                constraints:
+                                    BoxConstraints(maxWidth: maxBubble),
+                                child: Column(
+                                  crossAxisAlignment: mine
+                                      ? CrossAxisAlignment.end
+                                      : CrossAxisAlignment.start,
+                                  children: [
+                                    DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        boxShadow: AppShadows.card,
+                                        borderRadius: BorderRadius.only(
+                                          topLeft: const Radius.circular(20),
+                                          topRight: const Radius.circular(20),
+                                          bottomLeft: Radius.circular(mine ? 20 : 5),
+                                          bottomRight: Radius.circular(mine ? 5 : 20),
+                                        ),
+                                        gradient: mine
+                                            ? LinearGradient(
+                                                colors: [
+                                                  EditorialColors.tribalRed,
+                                                  EditorialColors.tribalMaroon,
+                                                ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              )
+                                            : null,
+                                        color: mine
+                                            ? null
+                                            : Colors.white,
+                                        border: mine
+                                            ? null
+                                            : Border.all(
+                                                color: EditorialColors.border
+                                                    .withValues(alpha: 0.9),
+                                              ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 11,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            if (!mine) ...[
+                                              Text(
+                                                item.senderName,
+                                                style: GoogleFonts.inter(
+                                                  fontWeight: FontWeight.w800,
+                                                  fontSize: 12,
+                                                  color:
+                                                      EditorialColors.tribalMaroon,
+                                                  letterSpacing: 0.35,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 5),
+                                              Text(
+                                                item.senderRole,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: EditorialColors.muted,
+                                                  letterSpacing: 0.3,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 8),
+                                            ],
+                                            Text(
+                                              item.text,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 14.8,
+                                                height: 1.48,
+                                                fontWeight: FontWeight.w500,
+                                                color: mine
+                                                    ? Colors.white
+                                                    : EditorialColors.charcoal,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(
+                                          top: 5, left: 4, right: 4),
+                                      child: Text(
+                                        DateFormat('h:mm a').format(item.sentAt),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color:
+                                              EditorialColors.muted.withValues(alpha: 0.88),
+                                          letterSpacing: 0.2,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          Text(item.text),
-                        ],
-                      ),
-                    ),
+                          ],
+                        ),
+                      );
+                    },
                   );
                 },
-              );
-            },
+              ),
+            ),
           ),
-        ),
         if (auth.isArtist &&
             relatedCommission != null &&
             relatedCommission.isOngoing)
           Padding(
-            padding: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.only(left: 12, right: 12, bottom: 4),
             child: Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
+                  horizontal: 16,
+                  vertical: 11,
                 ),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .primary
-                      .withValues(alpha: 0.12),
+                  color:
+                      EditorialColors.tribalRed.withValues(alpha: 0.090),
                   borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  'Reminder: send your client a progress update for this commission.',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.w600,
+                  border: Border.all(
+                    color:
+                        EditorialColors.tribalGold.withValues(alpha: 0.52),
                   ),
+                  boxShadow: AppShadows.card,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.task_alt_rounded,
+                      size: 18,
+                      color: EditorialColors.tribalMaroon,
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        'Reminder: send your client a quick progress ping for this commission.',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          height: 1.35,
+                          color: EditorialColors.tribalMaroon,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Write a message',
-                      border: OutlineInputBorder(),
+        Material(
+          color: Colors.white,
+          elevation: 8,
+          shadowColor: EditorialColors.border.withValues(alpha: 0.45),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding:
+                  const EdgeInsets.fromLTRB(14, 10, 12, 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      minLines: 1,
+                      maxLines: 6,
+                      textCapitalization:
+                          TextCapitalization.sentences,
+                      style: GoogleFonts.inter(
+                        fontSize: 15,
+                        height: 1.45,
+                        color: EditorialColors.charcoal,
+                      ),
+                      decoration: InputDecoration(
+                        hintText:
+                            participant == null ? 'Loading…' : 'Message ${chatName}…',
+                        hintStyle: GoogleFonts.inter(
+                          color:
+                              EditorialColors.muted.withValues(alpha: 0.78),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        filled: true,
+                        fillColor:
+                            EditorialColors.parchment.withValues(alpha: 0.92),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 13,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide:
+                              BorderSide(color: EditorialColors.border),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide:
+                              BorderSide(color: EditorialColors.border),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(26),
+                          borderSide: BorderSide(
+                            color:
+                                EditorialColors.tribalRed.withValues(alpha: 0.92),
+                            width: 1.45,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: () async {
-                    final text = _messageController.text.trim();
-                    if (text.isEmpty || participant == null) {
-                      return;
-                    }
-                    await _chatService.sendMessage(
-                      conversationId: widget.conversationId,
-                      senderId: currentUserId,
-                      senderName: auth.displayName,
-                      senderRole: _roleLabel(auth),
-                      recipient: participant,
-                      text: text,
-                    );
-                    await _markRead();
-                    _messageController.clear();
-                  },
-                  icon: const Icon(Icons.send),
-                ),
-              ],
+                  const SizedBox(width: 10),
+                  Tooltip(
+                    message: 'Send',
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: participant == null
+                            ? null
+                            : LinearGradient(
+                                colors: [
+                                  EditorialColors.tribalRed,
+                                  EditorialColors.tribalMaroon,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                        color:
+                            participant == null ? EditorialColors.border : null,
+                        boxShadow: participant == null ? null : AppShadows.softGlow,
+                      ),
+                      child: SizedBox(
+                        width: 50,
+                        height: 50,
+                        child: IconButton(
+                          splashRadius: 24,
+                          onPressed: participant == null
+                              ? null
+                              : () async {
+                                  final text = _messageController.text.trim();
+                                  if (text.isEmpty) {
+                                    return;
+                                  }
+                                  await _chatService.sendMessage(
+                                    conversationId: widget.conversationId,
+                                    senderId: currentUserId,
+                                    senderName: auth.displayName,
+                                    senderRole: roleLabel(auth),
+                                    recipient: participant,
+                                    text: text,
+                                  );
+                                  await _markRead();
+                                  _messageController.clear();
+                                  if (!context.mounted) {
+                                    return;
+                                  }
+                                  FocusScope.of(context).unfocus();
+                                },
+                          icon: Icon(
+                            Icons.send_rounded,
+                            color: participant == null
+                                ? EditorialColors.muted
+                                : Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -6077,7 +5141,7 @@ class _CommissionRequestScreenState extends State<CommissionRequestScreen> {
                     : _titleController.text.trim(),
                 brief: brief,
                 budget: budget <= 0 ? 1000 : budget,
-                clientId: _chatUserId(auth),
+                clientId: chatUserIdFor(auth),
                 clientName: auth.displayName,
                 artistId: artistContact.userId,
                 artistName: artistName,
@@ -6092,9 +5156,9 @@ class _CommissionRequestScreenState extends State<CommissionRequestScreen> {
             if (conversationId != null) {
               await _chatService.sendMessage(
                 conversationId: conversationId,
-                senderId: _chatUserId(auth),
+                senderId: chatUserIdFor(auth),
                 senderName: auth.displayName,
-                senderRole: _roleLabel(auth),
+                senderRole: roleLabel(auth),
                 recipient: artistContact,
                 text:
                     'Commission request: ${_titleController.text.trim().isEmpty ? 'Custom artwork request' : _titleController.text.trim()}\nBudget: PHP ${(budget <= 0 ? 1000 : budget).toStringAsFixed(0)}\nTarget date: $timeline\n${brief.isEmpty ? 'Sharing more details soon.' : brief}',
@@ -6134,7 +5198,7 @@ class _CommissionsScreenState extends State<CommissionsScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
     final data = context.watch<AppDataState>();
-    final userId = _chatUserId(auth);
+    final userId = chatUserIdFor(auth);
     final artistView = auth.isArtist || auth.isAdmin;
     final commissions = data.commissions.where((item) {
       return artistView
@@ -6153,7 +5217,7 @@ class _CommissionsScreenState extends State<CommissionsScreen> {
         ),
         const SizedBox(height: 10),
         if (commissions.isEmpty)
-          const _EmptyMessageCard(
+          const EmptyMessageCard(
             title: 'No commission activity yet',
             subtitle: 'Start with an inquiry or submit a commission request.',
           ),
@@ -6176,7 +5240,7 @@ class _CommissionsScreenState extends State<CommissionsScreen> {
                     subtitle: Text(
                       '${counterpart.isEmpty ? (artistView ? 'Buyer request' : 'Artist request') : counterpart} · Budget \$${item.budget.toStringAsFixed(0)}',
                     ),
-                    trailing: _statusChip(item.status),
+                    trailing: orderStatusChip(item.status),
                   ),
                   if (item.artworkTitle.isNotEmpty)
                     Padding(
@@ -6361,7 +5425,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
     final data = context.watch<AppDataState>();
-    final actorId = _chatUserId(auth);
+    final actorId = chatUserIdFor(auth);
     final artistView = auth.isArtist || auth.isAdmin;
     final orders = data.orders.where((item) {
       return artistView
@@ -6369,125 +5433,170 @@ class _OrdersScreenState extends State<OrdersScreen> {
           : item.buyerId == actorId || item.buyerName == auth.displayName;
     }).toList();
 
-    return ListView(
-      padding: const EdgeInsets.all(12),
-      children: [
-        Text(
-          artistView ? 'Sales and payouts' : 'Buyer order history',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 10),
-        if (orders.isEmpty)
-          const _EmptyMessageCard(
-            title: 'No orders yet',
-            subtitle: 'Completed purchases and sales will appear here.',
-          ),
-        ...orders.map((item) {
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(
-                      item.artworkTitle.isEmpty
-                          ? 'Order #${item.id}'
-                          : item.artworkTitle,
-                    ),
-                    subtitle: Text(
-                      artistView
-                          ? '${item.buyerName.isEmpty ? 'Buyer order' : item.buyerName} · ${item.paymentMethod}'
-                          : '${item.artistName.isEmpty ? 'Artist order' : item.artistName} · ${item.paymentMethod}',
-                    ),
-                    trailing: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text('\$${item.total.toStringAsFixed(0)}'),
-                        const SizedBox(height: 2),
-                        Text(
-                          item.status,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _statusChip(item.paymentStatus),
-                      _statusChip(item.payoutStatus),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      if (!artistView &&
-                          item.status.toLowerCase() != 'completed')
-                        OutlinedButton(
-                          onPressed: () {
-                            final nextStatus =
-                                item.status.toLowerCase() == 'pending'
-                                ? 'In Progress'
-                                : item.status.toLowerCase() == 'in progress'
-                                ? 'Delivered'
-                                : 'Completed';
-                            setState(() {
-                              context.read<AppDataState>().updateOrderStatus(
-                                item.id,
-                                nextStatus,
-                              );
-                            });
-                          },
-                          child: Text(
-                            item.status.toLowerCase() == 'delivered'
-                                ? 'Confirm receipt'
-                                : 'Advance order',
-                          ),
-                        ),
-                      if (!artistView &&
-                          item.status.toLowerCase() == 'completed')
-                        OutlinedButton(
-                          onPressed: () async {
-                            await _rateArtist(context, item.artistName);
-                          },
-                          child: const Text('Rate artist'),
-                        ),
-                      if (artistView &&
-                          item.status.toLowerCase() != 'completed')
-                        FilledButton(
-                          onPressed: () {
-                            final nextStatus =
-                                item.status.toLowerCase() == 'pending'
-                                ? 'In Progress'
-                                : item.status.toLowerCase() == 'in progress'
-                                ? 'Delivered'
-                                : 'Completed';
-                            setState(() {
-                              context.read<AppDataState>().updateOrderStatus(
-                                item.id,
-                                nextStatus,
-                              );
-                            });
-                          },
-                          child: Text(
-                            'Mark ${item.status == 'Delivered' ? 'Completed' : 'Next Step'}',
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
-              ),
+    return ColoredBox(
+      color: EditorialColors.pageCream,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 28),
+        physics: const BouncingScrollPhysics(),
+        children: [
+          Text(
+            artistView ? 'Sales & payouts' : 'Your orders',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: EditorialColors.ink,
             ),
-          );
-        }),
-      ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            artistView
+                ? 'Track buyer orders and fulfilment.'
+                : 'Purchases and delivery status at a glance.',
+            style: GoogleFonts.inter(fontSize: 13.5, color: EditorialColors.muted),
+          ),
+          const SizedBox(height: 18),
+          if (orders.isEmpty)
+            const EmptyMessageCard(
+              title: 'No orders yet',
+              subtitle: 'Completed purchases and sales will appear here.',
+            ),
+          ...orders.map((item) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: AppRadii.circularLg(),
+                  border: Border.all(color: EditorialColors.border),
+                  boxShadow: AppShadows.card,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          item.artworkTitle.isEmpty
+                              ? 'Order #${item.id}'
+                              : item.artworkTitle,
+                          style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16),
+                        ),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            artistView
+                                ? '${item.buyerName.isEmpty ? 'Buyer order' : item.buyerName} · ${item.paymentMethod}'
+                                : '${item.artistName.isEmpty ? 'Artist order' : item.artistName} · ${item.paymentMethod}',
+                          ),
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '\$${item.total.toStringAsFixed(0)}',
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                                color: EditorialColors.tribalRed,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              item.status,
+                              style: GoogleFonts.inter(fontSize: 11.5, color: EditorialColors.muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          orderStatusChip(item.paymentStatus),
+                          orderStatusChip(item.payoutStatus),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (!artistView && item.status.toLowerCase() != 'completed')
+                            OutlinedButton(
+                              onPressed: () {
+                                final nextStatus = item.status.toLowerCase() == 'pending'
+                                    ? 'In Progress'
+                                    : item.status.toLowerCase() == 'in progress'
+                                        ? 'Delivered'
+                                        : 'Completed';
+                                setState(() {
+                                  context.read<AppDataState>().updateOrderStatus(
+                                        item.id,
+                                        nextStatus,
+                                      );
+                                });
+                              },
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                item.status.toLowerCase() == 'delivered'
+                                    ? 'Confirm receipt'
+                                    : 'Advance order',
+                              ),
+                            ),
+                          if (!artistView && item.status.toLowerCase() == 'completed')
+                            OutlinedButton(
+                              onPressed: () async {
+                                await _rateArtist(context, item.artistName);
+                              },
+                              style: OutlinedButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: const Text('Rate artist'),
+                            ),
+                          if (artistView && item.status.toLowerCase() != 'completed')
+                            FilledButton(
+                              onPressed: () {
+                                final nextStatus = item.status.toLowerCase() == 'pending'
+                                    ? 'In Progress'
+                                    : item.status.toLowerCase() == 'in progress'
+                                        ? 'Delivered'
+                                        : 'Completed';
+                                setState(() {
+                                  context.read<AppDataState>().updateOrderStatus(
+                                        item.id,
+                                        nextStatus,
+                                      );
+                                });
+                              },
+                              style: FilledButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(
+                                'Mark ${item.status == 'Delivered' ? 'Completed' : 'Next Step'}',
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }
@@ -6499,7 +5608,7 @@ class PaymentsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final auth = context.watch<AuthState>();
     final data = context.watch<AppDataState>();
-    final actorId = _chatUserId(auth);
+    final actorId = chatUserIdFor(auth);
     final artistView = auth.isArtist || auth.isAdmin;
     final orders = data.orders.where((item) {
       return artistView
@@ -6510,102 +5619,177 @@ class PaymentsScreen extends StatelessWidget {
     final fees = gross * 0.1;
     final net = gross - fees;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          artistView ? 'Wallet and payouts' : 'Checkout and payments',
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            SizedBox(
-              width: 160,
-              child: _MetricCard(
-                label: artistView ? 'Gross Sales' : 'Total Paid',
-                value: '\$${gross.toStringAsFixed(0)}',
-              ),
+    return ColoredBox(
+      color: EditorialColors.pageCream,
+      child: ListView(
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(18, 20, 18, 32),
+        children: [
+          Text(
+            artistView ? 'Wallet & payouts' : 'Payments',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 26,
+              fontWeight: FontWeight.w700,
+              color: EditorialColors.ink,
             ),
-            SizedBox(
-              width: 160,
-              child: _MetricCard(
-                label: 'Platform Fees',
-                value: '\$${fees.toStringAsFixed(0)}',
-              ),
-            ),
-            SizedBox(
-              width: 160,
-              child: _MetricCard(
-                label: artistView ? 'Net Income' : 'Escrow Held',
-                value: '\$${net.toStringAsFixed(0)}',
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  artistView
-                      ? 'Withdrawal options'
-                      : 'Simulated payment methods',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 10),
-                const Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            artistView
+                ? 'Earnings overview and payout simulation.'
+                : 'Checkout methods and spending summary.',
+            style: GoogleFonts.inter(fontSize: 13.5, color: EditorialColors.muted),
+          ),
+          const SizedBox(height: 18),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final wide = constraints.maxWidth > 360;
+              Widget metricWrap({required List<Widget> kids}) {
+                if (!wide) {
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: kids,
+                  );
+                }
+                return Row(
                   children: [
-                    Chip(label: Text('GCash')),
-                    Chip(label: Text('Maya')),
-                    Chip(label: Text('Bank Transfer')),
+                    for (var i = 0; i < kids.length; i++) ...[
+                      Expanded(child: kids[i]),
+                      if (i < kids.length - 1) const SizedBox(width: 12),
+                    ],
                   ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  artistView
-                      ? 'Payouts remain pending until orders are completed and funds are released from escrow.'
-                      : 'Buyer payments are recorded as held until delivery is confirmed.',
-                ),
-              ],
+                );
+              }
+
+              return metricWrap(
+                kids: [
+                  MetricSummaryCard(
+                    label: artistView ? 'Gross sales' : 'Total paid',
+                    value: '\$${gross.toStringAsFixed(0)}',
+                  ),
+                  MetricSummaryCard(
+                    label: 'Platform fees',
+                    value: '\$${fees.toStringAsFixed(0)}',
+                  ),
+                  MetricSummaryCard(
+                    label: artistView ? 'Net income' : 'Escrow held',
+                    value: '\$${net.toStringAsFixed(0)}',
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 18),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: AppRadii.circularLg(),
+              border: Border.all(color: EditorialColors.border),
+              boxShadow: AppShadows.card,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    artistView ? 'Withdrawal options' : 'Payment methods',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: EditorialColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Chip(
+                        avatar: Icon(Icons.account_balance_wallet_rounded, size: 18, color: EditorialColors.tribalRed),
+                        label: const Text('GCash'),
+                        side: BorderSide(color: EditorialColors.border),
+                        backgroundColor: EditorialColors.parchment,
+                      ),
+                      Chip(
+                        avatar: Icon(Icons.payment_rounded, size: 18, color: EditorialColors.tribalRed),
+                        label: const Text('Maya'),
+                        side: BorderSide(color: EditorialColors.border),
+                        backgroundColor: EditorialColors.parchment,
+                      ),
+                      Chip(
+                        avatar: Icon(Icons.account_balance_rounded, size: 18, color: EditorialColors.tribalRed),
+                        label: const Text('Bank transfer'),
+                        side: BorderSide(color: EditorialColors.border),
+                        backgroundColor: EditorialColors.parchment,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    artistView
+                        ? 'Payouts stay pending until orders complete and escrow releases.'
+                        : 'Buyer payments show as held until you confirm delivery.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      height: 1.45,
+                      color: EditorialColors.muted,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          'Transaction history',
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 10),
-        if (orders.isEmpty)
-          const _EmptyMessageCard(
-            title: 'No payment activity yet',
-            subtitle: 'Completed transactions will appear here.',
-          ),
-        ...orders.map((item) {
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              title: Text(
-                item.artworkTitle.isEmpty
-                    ? 'Order #${item.id}'
-                    : item.artworkTitle,
-              ),
-              subtitle: Text(
-                '${item.paymentMethod} · ${item.paymentStatus} · ${item.payoutStatus}',
-              ),
-              trailing: Text('\$${item.total.toStringAsFixed(0)}'),
+          const SizedBox(height: 22),
+          Text(
+            'Transaction history',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: EditorialColors.ink,
             ),
-          );
-        }),
-      ],
+          ),
+          const SizedBox(height: 12),
+          if (orders.isEmpty)
+            const EmptyMessageCard(
+              title: 'No payment activity yet',
+              subtitle: 'Completed transactions will appear here.',
+            ),
+          ...orders.map((item) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: AppRadii.circularLg(),
+                  border: Border.all(color: EditorialColors.border),
+                  boxShadow: AppShadows.card,
+                ),
+                child: ListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  title: Text(
+                    item.artworkTitle.isEmpty ? 'Order #${item.id}' : item.artworkTitle,
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w700),
+                  ),
+                  subtitle: Text(
+                    '${item.paymentMethod} · ${item.paymentStatus} · ${item.payoutStatus}',
+                    style: GoogleFonts.inter(fontSize: 12, color: EditorialColors.muted),
+                  ),
+                  trailing: Text(
+                    '\$${item.total.toStringAsFixed(0)}',
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      color: EditorialColors.tribalRed,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
     );
   }
 }
@@ -6690,120 +5874,364 @@ class ArtistProfileScreen extends StatelessWidget {
 
   final String artistId;
 
+  static const _divider = Color(0xFFCED0D4);
+
+  static List<String> _stringList(dynamic raw) {
+    if (raw is List) {
+      return raw.map((e) => e.toString().trim()).where((s) => s.isNotEmpty).toList();
+    }
+    return [];
+  }
+
+  /// Prefers new `pinnedDetails`; falls back to legacy exhibit/org lists.
+  static List<String> _pinnedLines(Map<String, dynamic>? data) {
+    if (data == null) {
+      return [];
+    }
+    final pins = _stringList(data['pinnedDetails']);
+    if (pins.isNotEmpty) {
+      return pins;
+    }
+    return [
+      ..._stringList(data['exhibitHighlights']),
+      ..._stringList(data['memberOrganizations']),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final data = context.watch<AppDataState>();
-    final works = data.artworks
-        .where((item) => item.artistId == artistId)
-        .toList();
-    final artistName = works.isNotEmpty
-        ? works.first.artistName
-        : 'Artist #$artistId';
+    final auth = context.watch<AuthState>();
+    final works = data.artworks.where((item) => item.artistId == artistId).toList();
+    final artistName = works.isNotEmpty ? works.first.artistName : 'Artist';
     final avgRating = works.isEmpty
-        ? 0
-        : works.fold<double>(
-                0,
-                (runningTotal, item) => runningTotal + item.avgRating,
-              ) /
-              works.length;
+        ? 0.0
+        : works.fold<double>(0, (t, item) => t + item.avgRating) / works.length;
+    final postsCount = works.length;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const CircleAvatar(
-          radius: 34,
-          child: Icon(Icons.brush_outlined, size: 34),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          artistName,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (works.any((item) => item.artistId.isNotEmpty))
-              const Chip(
-                label: Text('Verified'),
-                visualDensity: VisualDensity.compact,
-              ),
-            const SizedBox(width: 6),
-            Text(
-              avgRating == 0
-                  ? 'No ratings yet'
-                  : 'Rating ${avgRating.toStringAsFixed(1)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          'Specializes in vivid portraiture and digital mixed media compositions.',
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 16),
-        StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(artistId)
-              .snapshots(),
-          builder: (context, snapshot) {
-            final acceptingCommissions =
-                snapshot.data?.data()?['acceptingCommissions'] as bool? ?? true;
-            return Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: [
-                FilledButton(
-                  onPressed: acceptingCommissions
-                      ? () => context.push(
-                            _commissionRoute(
-                              artistName: artistName,
-                              artistId: artistId,
-                            ),
-                          )
-                      : null,
-                  child: Text(
-                    acceptingCommissions
-                        ? 'Request commission'
-                        : 'Commission Closed',
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => _sendInquiryRequest(
-                    context: context,
-                    auth: context.read<AuthState>(),
-                    artwork: works.isNotEmpty
-                        ? works.first
-                        : Artwork(
-                            id: artistId,
-                            title: 'Portfolio inquiry',
-                            artistName: artistName,
-                            price: 0,
-                            imageUrl: '',
-                            images: const [],
+    return DecoratedBox(
+      decoration: BoxDecoration(gradient: BukidnonGradients.pageAmbient),
+      child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance.collection('users').doc(artistId).snapshots(),
+        builder: (context, userSnap) {
+          final u = userSnap.data?.data();
+          final displayName = (u?['displayName'] as String?)?.trim();
+          final name = (displayName != null && displayName.isNotEmpty) ? displayName : artistName;
+          final username = (u?['username'] as String?)?.trim() ?? '';
+          final photo = (u?['photoUrl'] as String?)?.trim() ?? '';
+          final bio = (u?['bio'] as String?)?.trim() ?? '';
+          final followers = (u?['followersCount'] as num?)?.toInt() ?? 0;
+          final following = (u?['followingCount'] as num?)?.toInt() ?? 0;
+          final pinned = ArtistProfileScreen._pinnedLines(u);
+          final acceptingCommissions = u?['acceptingCommissions'] as bool? ?? true;
+          final verified = u?['isVerified'] as bool? ?? false;
+
+          final viewerId = auth.currentUserId;
+          final isSelf = viewerId != null && viewerId == artistId;
+
+          return ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: [
+              SizedBox(
+                height: 210,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.bottomCenter,
+                  children: [
+                    Positioned(
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      child: Container(
+                        height: 132,
+                        decoration: BoxDecoration(
+                          gradient: BukidnonGradients.profileHero,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: AppShadows.card,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      bottom: 6,
+                      child: Hero(
+                        tag: 'profile_avatar_$artistId',
+                        child: Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: AppShadows.card,
                           ),
-                  ),
-                  icon: const Icon(Icons.chat_bubble_outline),
-                  label: const Text('Message artist'),
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundColor: EditorialColors.surfaceCream,
+                            backgroundImage: photo.isNotEmpty ? NetworkImage(photo) : null,
+                            child: photo.isEmpty
+                                ? Text(
+                                    name.isNotEmpty ? name[0].toUpperCase() : '?',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 38,
+                                      fontWeight: FontWeight.w700,
+                                      color: EditorialColors.charcoal,
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.3,
+                ),
+              ),
+              if (username.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  username,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
                 ),
               ],
-            );
-          },
-        ),
-        const SizedBox(height: 16),
-        ...works.map((item) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: ArtworkCard(
-              artwork: item,
-              onTap: () => context.push('/artwork/${item.id}'),
-            ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.94),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: AppShadows.card,
+                  border: Border.all(color: _divider.withValues(alpha: 0.85)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(child: _PubStat(value: '$postsCount', label: 'Posts')),
+                    SizedBox(
+                      height: 34,
+                      child: VerticalDivider(
+                        width: 1,
+                        thickness: 1,
+                        color: _divider,
+                      ),
+                    ),
+                    Expanded(child: _PubStat(value: '$followers', label: 'Followers')),
+                    SizedBox(
+                      height: 34,
+                      child: VerticalDivider(
+                        width: 1,
+                        thickness: 1,
+                        color: _divider,
+                      ),
+                    ),
+                    Expanded(child: _PubStat(value: '$following', label: 'Following')),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (verified)
+                Center(
+                  child: Chip(
+                    avatar: const Icon(Icons.verified, size: 16, color: Color(0xFF1877F2)),
+                    label: const Text('Verified artist'),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              if (avgRating > 0) ...[
+                const SizedBox(height: 6),
+                Center(
+                  child: Text(
+                    'Rating · ${avgRating.toStringAsFixed(1)}',
+                    style: TextStyle(color: Colors.grey.shade700),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.center,
+                children: [
+                  if (!isSelf && viewerId != null)
+                    StreamBuilder<bool>(
+                      stream: auth.watchFollowingArtist(artistId),
+                      builder: (context, fo) {
+                        final followingArtist = fo.data ?? false;
+                        if (followingArtist) {
+                          return OutlinedButton(
+                            onPressed: () async {
+                              try {
+                                await auth.unfollowArtist(artistId);
+                              } catch (_) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Could not unfollow')),
+                                  );
+                                }
+                              }
+                            },
+                            child: const Text('Following'),
+                          );
+                        }
+                        return FilledButton(
+                          onPressed: () async {
+                            try {
+                              await auth.followArtist(artistId);
+                            } catch (_) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Could not follow')),
+                                );
+                              }
+                            }
+                          },
+                          child: const Text('Follow'),
+                        );
+                      },
+                    )
+                  else if (!isSelf && viewerId == null)
+                    OutlinedButton(
+                      onPressed: () {},
+                      child: const Text('Sign in to follow'),
+                    ),
+                  FilledButton(
+                    style: FilledButton.styleFrom(
+                      backgroundColor:
+                          EditorialColors.tribalGold.withValues(alpha: 0.24),
+                      foregroundColor: EditorialColors.tribalMaroon,
+                    ),
+                    onPressed: acceptingCommissions
+                        ? () => context.push(
+                              buildCommissionRoute(
+                                artistName: name,
+                                artistId: artistId,
+                              ),
+                            )
+                        : null,
+                    child: Text(
+                      acceptingCommissions ? 'Request commission' : 'Commissions closed',
+                    ),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () => _sendInquiryRequest(
+                      context: context,
+                      auth: auth,
+                      artwork: works.isNotEmpty
+                          ? works.first
+                          : Artwork(
+                              id: artistId,
+                              title: 'Portfolio inquiry',
+                              artistName: name,
+                              price: 0,
+                              imageUrl: '',
+                              images: const [],
+                            ),
+                    ),
+                    icon: const Icon(Icons.chat_bubble_outline),
+                    label: const Text('Message'),
+                  ),
+                ],
+              ),
+              if (bio.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: EditorialColors.tribalCream.withValues(alpha: 0.42),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _divider.withValues(alpha: 0.82)),
+                    boxShadow: AppShadows.card,
+                  ),
+                  child: Text(
+                    bio,
+                    style: GoogleFonts.inter(fontSize: 15, height: 1.45, color: EditorialColors.charcoal),
+                  ),
+                ),
+              ],
+              if (pinned.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: _divider.withValues(alpha: 0.82)),
+                    borderRadius: BorderRadius.circular(14),
+                    color: Colors.white.withValues(alpha: 0.93),
+                    boxShadow: AppShadows.card,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Pinned',
+                        style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 16, color: EditorialColors.ink),
+                      ),
+                      const SizedBox(height: 10),
+                      ...pinned.map(
+                        (line) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.push_pin_outlined, size: 18, color: EditorialColors.tribalRed.withValues(alpha: 0.95)),
+                              const SizedBox(width: 8),
+                              Expanded(child: Text(line, style: GoogleFonts.inter(fontSize: 15, height: 1.4))),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 18),
+              const Text(
+                'Works',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+              ),
+              const SizedBox(height: 10),
+              ...works.map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: ArtworkCard(
+                    artwork: item,
+                    onTap: () => context.push('/artwork/${item.id}'),
+                  ),
+                ),
+              ),
+            ],
           );
-        }),
+        },
+      ),
+    );
+  }
+}
+
+class _PubStat extends StatelessWidget {
+  const _PubStat({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+        ),
       ],
     );
   }
@@ -6900,65 +6328,3 @@ class NotFoundScreen extends StatelessWidget {
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 4),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              value,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-Widget _statusChip(String status) {
-  final normalized = status.toLowerCase();
-  Color color;
-  if (normalized.contains('active') || normalized.contains('processing')) {
-    color = const Color(0xFF0369A1);
-  } else if (normalized.contains('completed') ||
-      normalized.contains('delivered')) {
-    color = const Color(0xFF166534);
-  } else {
-    color = const Color(0xFF92400E);
-  }
-
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-    decoration: BoxDecoration(
-      color: color.withOpacity(0.12),
-      borderRadius: BorderRadius.circular(999),
-    ),
-    child: Text(
-      status,
-      style: TextStyle(color: color, fontWeight: FontWeight.w600),
-    ),
-  );
-}

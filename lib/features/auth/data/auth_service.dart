@@ -319,6 +319,10 @@ class AuthService {
       'featuredBoost': (existing?['featuredBoost'] as bool?) ?? false,
       'acceptingCommissions':
           (existing?['acceptingCommissions'] as bool?) ?? true,
+      'followersCount': (existing?['followersCount'] as num?)?.toInt() ?? 0,
+      'followingCount': (existing?['followingCount'] as num?)?.toInt() ?? 0,
+      'pinnedDetails':
+          existing?['pinnedDetails'] ?? <dynamic>[],
       'username': username,
       'createdAt': existing?['createdAt'] ?? FieldValue.serverTimestamp(),
       'lastLoginAt': FieldValue.serverTimestamp(),

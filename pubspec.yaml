@@ -84,7 +84,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - .env
+    - assets/dotenv
     - assets/images/artflow_logo.png
     - assets/images/bukidnon_artists_logo.png
     - assets/images/artizan_logo.png
